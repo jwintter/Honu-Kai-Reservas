@@ -201,6 +201,7 @@ const ERR = {
   telefone_invalido: 'Informe o telefone com DDD, por exemplo (27) 99999-0000.',
   nome_invalido: 'Informe seu nome completo.',
   somente_admin: 'Apenas o administrador pode fazer isso.',
+  plataformas_lotadas: 'As 4 vagas de plataforma dessa turma já estão ocupadas.',
   vinculo_pendente: 'Sua conta ainda está sendo vinculada ao seu cadastro do WhatsApp. O Jhon vai liberar em breve.'
 };
 function erro(e) {
@@ -468,15 +469,24 @@ async function pAlunos() {
 }
 async function pSessoes() {
   const dia = S.cache.dia || amanhaSP();
-  const { data, error } = await sb.from('sessoes').select('id,data,hora,chegada,cota_app,cota_plataformas,status,reservas(id,status,pago,pacote_id,banco_proprio,provisoria,nome_remador,alunos(nome,telefone))').eq('data', dia).order('hora');
+  const { data, error } = await sb.from('sessoes').select('id,data,hora,chegada,cota_app,cota_plataformas,status,reservas(id,status,pago,pacote_id,banco_proprio,provisoria,nome_remador,alunos(nome,telefone)),reservas_plataforma(id,plataforma,nome,status,repor_ate,origem)').eq('data', dia).order('hora');
   if (error) throw error;
   const rot = { confirmada: 'Confirmada', pagamento_pendente: 'Falta o Pix', espera: 'Espera', cancelada: 'Cancelada', falta: 'Falta', realizada: 'Presente' };
   const cards = (data || []).map(s => {
     const conf = s.reservas.filter(r => ['confirmada', 'pagamento_pendente', 'falta', 'realizada'].includes(r.status)), esp = s.reservas.filter(r => r.status === 'espera'), ocupam = conf.filter(r => r.banco_proprio && ['confirmada', 'pagamento_pendente'].includes(r.status)).length;
     const pl = (r) => `<div class="pl"><div><b>${esc(r.nome_remador || (r.alunos ? r.alunos.nome : '—'))}</b><br><small>${esc(r.alunos ? r.alunos.telefone || '' : '')} ${!r.banco_proprio ? '· criança no banco' : r.pacote_id ? '· pacote' : '· avulsa' + (r.pago ? ' (paga)' : '')}${r.provisoria ? ' · provisória' : ''}</small></div><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="st ${r.status === 'pagamento_pendente' ? 'espera' : r.status}">${rot[r.status]}</span>
       ${r.status === 'pagamento_pendente' ? `<button class="mb g" data-act="pix" data-id="${r.id}">Pix recebido</button>` : ''}${r.status === 'espera' && r.banco_proprio ? `<button class="mb g" data-act="aceitar" data-id="${r.id}">Dar a vaga</button>` : ''}${['confirmada', 'pagamento_pendente', 'espera'].includes(r.status) ? `<button class="mb r" data-act="admcancel" data-id="${r.id}">Cancelar</button>` : ''}${r.status === 'confirmada' ? `<button class="mb o" data-act="rstat" data-id="${r.id}" data-s="falta">Falta</button><button class="mb g" data-act="rstat" data-id="${r.id}" data-s="realizada">Presente</button>` : ''}</div></div>`;
-    return `<div class="scard"><div class="t"><b>${hhmm(s.hora)}</b><span style="font-weight:800">${ocupam}/${s.cota_app} no app · +${s.cota_plataformas} plataformas</span></div>
-      ${conf.map(pl).join('') || '<div class="pl"><small>Nenhuma reserva confirmada.</small></div>'}${esp.length ? `<div style="font-weight:800;margin-top:10px;font-size:13px">Lista de espera</div>${esp.map(pl).join('')}` : ''}</div>`;
+    const plat = (s.reservas_plataforma || []).filter(x => x.status !== 'cancelada');
+    const nPlat = { wellhub: 'Wellhub', totalpass: 'TotalPass' };
+    const rot2 = { reservada: 'Reservada', presente: 'Presente', falta: 'Falta' };
+    const pp = (x) => `<div class="pl"><div><b>${esc(x.nome)}</b><br><small>${nPlat[x.plataforma]}${x.origem === 'tecnofit' ? ' · Tecnofit' : ' · lançada à mão'}${x.status === 'falta' && x.repor_ate ? ' · repor check-in até ' + fmtBR(x.repor_ate).slice(0, 5) : ''}</small></div><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="st ${x.status === 'falta' ? 'falta' : x.status === 'presente' ? 'realizada' : 'confirmada'}">${rot2[x.status]}</span>
+      ${x.status === 'reservada' ? `<button class="mb o" data-act="pst" data-id="${x.id}" data-s="falta">Falta</button><button class="mb g" data-act="pst" data-id="${x.id}" data-s="presente">Presente</button>` : ''}<button class="mb r" data-act="pst" data-id="${x.id}" data-s="cancelada">Cancelar</button></div></div>`;
+    const livresPlat = Math.max(s.cota_plataformas - plat.length, 0);
+    return `<div class="scard"><div class="t"><b>${hhmm(s.hora)}</b><span style="font-weight:800">${ocupam + plat.length}/${s.cota_app + s.cota_plataformas} vagas</span></div>
+      <div style="font-size:12px;font-weight:800;color:#6B7360;margin-bottom:4px">APP · ${ocupam}/${s.cota_app}</div>
+      ${conf.map(pl).join('') || '<div class="pl"><small>Nenhuma reserva confirmada.</small></div>'}${esp.length ? `<div style="font-weight:800;margin-top:10px;font-size:13px">Lista de espera</div>${esp.map(pl).join('')}` : ''}
+      <div style="font-size:12px;font-weight:800;color:#6B7360;margin:12px 0 4px">PLATAFORMAS · ${plat.length}/${s.cota_plataformas}</div>
+      ${plat.map(pp).join('')}${livresPlat ? `<div class="pl"><small>${livresPlat} ${livresPlat === 1 ? 'vaga livre' : 'vagas livres'} para Wellhub ou TotalPass</small><button class="mb g" data-act="platadd" data-id="${s.id}" data-h="${hhmm(s.hora)}">+ Plataforma</button></div>` : ''}</div>`;
   }).join('') || `<div class="empty">Sem remadas neste dia.</div>`;
   return [tit('Sessões', `<div class="kpi" style="padding:6px 12px"><input type="date" id="dia" class="in" value="${dia}" style="height:38px;width:170px"></div>`), `<div class="sgrid">${cards}</div>`];
 }
@@ -542,6 +552,17 @@ const A = {
   lancarok: b => lancar(b.dataset.id, $('#mTam').value),
   lancarform: () => lancar($('#pAluno').value, $('#pTam').value),
   admcancel: async b => { const { data, error } = await sb.rpc('admin_cancelar', { p_reserva: b.dataset.id, p_liberar: true }); if (error) return toast(erro(error), true); if (!data.ok) return toast(data.mensagem, true); toast(data.chamar_espera ? 'Cancelada. Próximo da espera: ' + data.chamar_espera.nome : 'Reserva cancelada.'); render(); },
+  platadd: b => sheet(`<h3>Reserva de plataforma</h3><p style="margin:0 0 4px;font-size:15px">Turma das <b>${esc(b.dataset.h)}</b></p>
+    <label class="f">Plataforma</label><select class="in" id="pPlat"><option value="totalpass">TotalPass</option><option value="wellhub">Wellhub</option></select>
+    <label class="f">Nome do aluno</label><input class="in" id="pNome" placeholder="Nome e sobrenome">
+    <button class="btn g" data-act="platok" data-id="${b.dataset.id}">Lançar reserva</button><button class="btn ghost" data-act="fechar">Voltar</button>`),
+  platok: async b => {
+    const nome = ($('#pNome').value || '').trim(); if (nome.length < 3) return toast('Informe o nome do aluno.', true);
+    const { error } = await sb.from('reservas_plataforma').insert({ sessao_id: b.dataset.id, plataforma: $('#pPlat').value, nome });
+    if (error) return toast(error.message === 'plataformas_lotadas' ? 'As 4 vagas de plataforma dessa turma já estão ocupadas.' : erro(error), true);
+    toast('Reserva de plataforma lançada.'); fechar(); render();
+  },
+  pst: async b => { const { error } = await sb.from('reservas_plataforma').update({ status: b.dataset.s }).eq('id', b.dataset.id); if (error) return toast(erro(error), true); toast(b.dataset.s === 'falta' ? 'Falta registrada: check-in a repor em 7 dias.' : 'Registrado.'); render(); },
   pix: async b => { const { data, error } = await sb.rpc('admin_marcar_pago', { p_reserva: b.dataset.id }); if (error) return toast(erro(error), true); if (!data.ok) return toast(data.mensagem, true); toast('Pix registrado. Reserva confirmada.'); render(); },
   aceitar: async b => { const { data, error } = await sb.rpc('admin_aceitar_espera', { p_reserva: b.dataset.id }); if (error) return toast(erro(error), true); if (!data.ok) return toast(data.mensagem, true); toast('Vaga concedida.'); render(); },
   rstat: async b => { const { error } = await sb.from('reservas').update({ status: b.dataset.s }).eq('id', b.dataset.id); if (error) return toast(erro(error), true); toast('Registrado.'); render(); }
