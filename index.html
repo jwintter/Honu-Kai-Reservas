@@ -200,7 +200,8 @@ const ERR = {
   telefone_ja_cadastrado: 'Este telefone já está cadastrado em outra conta.',
   telefone_invalido: 'Informe o telefone com DDD, por exemplo (27) 99999-0000.',
   nome_invalido: 'Informe seu nome completo.',
-  somente_admin: 'Apenas o administrador pode fazer isso.'
+  somente_admin: 'Apenas o administrador pode fazer isso.',
+  vinculo_pendente: 'Sua conta ainda está sendo vinculada ao seu cadastro do WhatsApp. O Jhon vai liberar em breve.'
 };
 function erro(e) {
   const m = (e && e.message) || '';
@@ -234,7 +235,7 @@ const ICON = {
 })();
 
 /* ===== Estado ===== */
-const S = { user: null, perfil: null, cfg: {}, view: null, aba: 'pendencias', recovery: false, cache: {} };
+const S = { user: null, perfil: null, aluno: null, cfg: {}, view: null, aba: 'pendencias', recovery: false, cache: {} };
 
 /* ===== Autenticação e carga ===== */
 async function boot() {
@@ -257,6 +258,8 @@ async function carregar() {
     S.perfil = p; S.cfg = Object.fromEntries((c || []).map(r => [r.chave, r.valor]));
     if (S.recovery) return go('recuperar');
     if (!p || !p.nome || !p.telefone) return go('cadastro');
+    const { data: al } = await sb.rpc('meu_aluno'); S.aluno = al || null;
+    if (!S.aluno && p.papel !== 'admin') return go('vinculo');
     const h = location.hash.replace('#', '');
     go(h && h !== 'entrar' && h !== 'criar' && h !== 'cadastro' ? h : 'aulas');
   } catch (e) { go('entrar'); toast(erro(e), true); }
@@ -273,6 +276,7 @@ function render() {
   if (v === 'recuperar') return app.innerHTML = vRecuperar();
   if (!S.user) return go('entrar');
   if (v === 'cadastro') return app.innerHTML = vCadastro();
+  if (v === 'vinculo') return app.innerHTML = vVinculo();
   if (v.startsWith('painel')) { if (!isAdmin()) return go('aulas'); return vPainel(); }
   if (v === 'reservas') return vReservas();
   return vAulas();
@@ -304,6 +308,10 @@ function vRecuperar() {
   return `<div class="phone">${marca()}<div class="card"><form data-form="novasenha" novalidate><h2>Nova senha</h2><p class="lead">Escolha uma nova senha para a sua conta.</p>
   <label class="f" for="senha">Nova senha</label><input class="in" id="senha" name="senha" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required>
   <div id="fmsg"></div><button class="btn" type="submit">Salvar senha</button></form></div></div>`;
+}
+function vVinculo() {
+  return `<div class="phone">${marca()}<div class="card"><h2>Quase pronto</h2><p class="lead">Seu telefone já consta no cadastro do clube. Para proteger seu saldo e suas reservas, o Jhon precisa confirmar que é você. Assim que ele liberar, é só entrar de novo.</p>
+  <button class="btn" data-act="sair">Sair</button></div></div>`;
 }
 function vCadastro() {
   return `<div class="phone">${marca()}<div class="card">
@@ -340,7 +348,7 @@ async function vAulas() {
     const ocup = s.cota - s.vagas;
     const dots = Array.from({ length: s.cota }, (_, i) => `<i class="${i < ocup ? 'x' : ''}"></i>`).join('');
     const minha = s.minha_status;
-    const tag = minha === 'confirmada' ? `<span class="vag mine">Sua vaga está garantida</span>` : minha === 'espera' ? `<span class="vag mine">Você está na lista de espera</span>` : s.lotado ? `<span class="vag full">Lotado</span>` : `<span class="vag">${s.vagas} ${s.vagas === 1 ? 'vaga' : 'vagas'}</span>`;
+    const tag = minha === 'confirmada' ? `<span class="vag mine">Sua vaga está garantida</span>` : minha === 'pagamento_pendente' ? `<span class="vag mine">Vaga guardada · falta o Pix</span>` : minha === 'espera' ? `<span class="vag mine">Você está na lista de espera</span>` : s.lotado ? `<span class="vag full">Lotado</span>` : `<span class="vag">${s.vagas} ${s.vagas === 1 ? 'vaga' : 'vagas'}</span>`;
     let acao;
     if (minha) acao = `<button class="btn ghost" data-go="reservas">Ver minha reserva</button>`;
     else if (!aberta) acao = `<button class="btn" disabled>${jan ? 'Abre às ' + jan.abre_para_mim : 'Indisponível'}</button>`;
@@ -380,20 +388,23 @@ const fechar = () => { $('#layer').innerHTML = ''; };
 async function vReservas() {
   const app = $('#app');
   app.innerHTML = `<div class="phone"><div class="mini"><img src="./logo.png" alt=""><div class="t"><b style="font-size:30px">Minhas reservas</b></div></div><div class="center" style="min-height:40vh"><div class="spin"></div></div></div>${nav()}`;
-  const { data, error } = await sb.from('reservas').select('id,status,pago,pacote_id,sessoes(data,hora,chegada)').eq('aluno_id', S.user.id).order('criado_em', { ascending: false }).limit(40);
+  const { data, error } = await sb.from('reservas').select('id,status,pago,pacote_id,nome_remador,banco_proprio,provisoria,posicao_espera,sessoes(data,hora,chegada)').order('criado_em', { ascending: false }).limit(60);
   if (S.view !== 'reservas') return;
   if (error) toast(erro(error), true);
   const hoje = nowSP();
   const lista = (data || []).filter(r => r.sessoes).sort((a, b) => (b.sessoes.data + b.sessoes.hora).localeCompare(a.sessoes.data + a.sessoes.hora));
-  const rot = { confirmada: 'Confirmada', espera: 'Lista de espera', cancelada: 'Cancelada', falta: 'Falta', realizada: 'Realizada' };
+  const rot = { confirmada: 'Confirmada', pagamento_pendente: 'Falta o Pix', espera: 'Lista de espera', cancelada: 'Cancelada', falta: 'Falta', realizada: 'Realizada' };
   const cards = lista.map(r => {
     const d = parseD(r.sessoes.data); const prazo = new Date(d); prazo.setDate(prazo.getDate() - 1); prazo.setHours(20, 0, 0, 0);
-    const pode = ['confirmada', 'espera'].includes(r.status) && hoje < prazo;
-    return `<div class="res"><div class="top"><div><small>${esc(fmtShort(r.sessoes.data))}</small><div class="h">${hhmm(r.sessoes.hora)}</div><small style="text-transform:none;color:#6B7360">Chegada ${hhmm(r.sessoes.chegada)}${r.status === 'confirmada' && !r.pacote_id ? ' · avulsa' : ''}</small></div><span class="st ${r.status}">${rot[r.status]}</span></div>
-      ${pode ? `<button class="btn ghost sm" style="width:100%;margin-top:10px" data-act="cancelar" data-id="${r.id}">Cancelar reserva</button>` : ''}</div>`;
+    const inicio = new Date(d); inicio.setHours(+r.sessoes.hora.slice(0, 2), +r.sessoes.hora.slice(3, 5), 0, 0);
+    const ativa = ['confirmada', 'pagamento_pendente', 'espera'].includes(r.status);
+    const noPrazo = hoje < prazo, pode = ativa && hoje < inicio;
+    const det = [r.nome_remador && !r.banco_proprio ? 'criança no seu banco' : '', r.status === 'confirmada' && !r.pacote_id && r.banco_proprio ? 'avulsa' : '', r.provisoria && ativa ? '2ª remada provisória' : '', r.status === 'espera' && r.posicao_espera ? r.posicao_espera + 'º na espera' : ''].filter(Boolean).join(' · ');
+    return `<div class="res"><div class="top"><div><small>${esc(fmtShort(r.sessoes.data))}</small><div class="h">${hhmm(r.sessoes.hora)}</div><small style="text-transform:none;color:#6B7360">${r.nome_remador ? esc(r.nome_remador) + ' · ' : ''}Chegada ${hhmm(r.sessoes.chegada)}${det ? ' · ' + esc(det) : ''}</small></div><span class="st ${r.status === 'pagamento_pendente' ? 'espera' : r.status}">${rot[r.status]}</span></div>
+      ${pode ? `<button class="btn ghost sm" style="width:100%;margin-top:10px" data-act="cancelar" data-id="${r.id}" data-late="${noPrazo ? '' : '1'}">${noPrazo ? 'Cancelar reserva' : 'Liberar vaga'}</button>` : ''}</div>`;
   }).join('') || `<div class="empty">Você ainda não fez nenhuma reserva.</div>`;
   app.innerHTML = `<div class="phone"><div class="mini"><img src="./logo.png" alt=""><div class="t"><b style="font-size:30px">Minhas reservas</b></div></div>${cards}
-    <div class="note" style="margin-top:12px">O cancelamento devolve a remada ao saldo até as <b>20:00 do dia anterior</b>. Depois desse horário, fale com o Jhon.</div></div>${nav()}`;
+    <div class="note" style="margin-top:12px">O cancelamento devolve a remada ao saldo até as <b>20:00 do dia anterior</b>. Depois desse horário você ainda pode liberar a vaga para outra pessoa, mas a remada continua descontada.</div></div>${nav()}`;
 }
 
 /* ===== Painel do Jhon ===== */
@@ -419,7 +430,7 @@ const tit = (t, kp = '') => `<div class="head"><div><div style="font-weight:700;
 const kpi = (n, t) => `<div class="kpi"><b>${n}</b><small>${t}</small></div>`;
 
 async function pPend() {
-  const { data, error } = await sb.from('pendencias').select('*,perfis(nome,telefone)').neq('status', 'resolvida').order('criado_em');
+  const { data, error } = await sb.from('pendencias').select('*,alunos(nome,telefone)').neq('status', 'resolvida').order('criado_em');
   if (error) throw error;
   const cat = S.cache.cat || 'todas';
   const todas = data || []; S.cache.npend = todas.length;
@@ -427,17 +438,17 @@ async function pPend() {
   const pills = ['todas', 'financeiro', 'marketing', 'suporte', 'reservas'].map(c => `<button class="${cat === c ? 'on' : ''}" data-act="cat" data-c="${c}">${c[0].toUpperCase() + c.slice(1)}</button>`).join('');
   const quando = t => { const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : `há ${Math.round(m / 1440)} d`; };
   const linhas = lista.map(p => `<tr><td><b>${p.id}</b></td><td><span class="cat ${p.categoria}">${p.categoria[0].toUpperCase() + p.categoria.slice(1)}</span></td>
-    <td><b>${esc(p.perfis ? p.perfis.nome : '—')}</b></td><td>${esc(p.assunto)}${p.status === 'em_andamento' ? ' <span class="cat">em andamento</span>' : ''}</td><td style="color:#6B7360;font-weight:600">${quando(p.criado_em)}</td>
+    <td><b>${esc(p.alunos ? p.alunos.nome : '—')}</b></td><td>${esc(p.assunto)}${p.detalhe ? `<br><small style="color:#6B7360">${esc(p.detalhe)}</small>` : ''}${p.status === 'em_andamento' ? ' <span class="cat">em andamento</span>' : ''}</td><td style="color:#6B7360;font-weight:600">${quando(p.criado_em)}</td>
     <td><button class="mb g" data-act="pend" data-id="${p.id}" data-s="resolvida">Resolver</button>${p.status !== 'em_andamento' ? `<button class="mb" data-act="pend" data-id="${p.id}" data-s="em_andamento">Assumir</button>` : ''}<button class="mb o" data-act="pend" data-id="${p.id}" data-s="adiada">Depois</button></td></tr>`).join('');
-  const { count: nAl } = await sb.from('perfis').select('id', { count: 'exact', head: true });
-  const { count: nRes } = await sb.from('reservas').select('id,sessoes!inner(data)', { count: 'exact', head: true }).eq('status', 'confirmada').eq('sessoes.data', amanhaSP());
+  const { count: nAl } = await sb.from('alunos').select('id', { count: 'exact', head: true }).is('responsavel_id', null);
+  const { count: nRes } = await sb.from('reservas').select('id,sessoes!inner(data)', { count: 'exact', head: true }).in('status', ['confirmada', 'pagamento_pendente']).eq('banco_proprio', true).eq('sessoes.data', amanhaSP());
   return [tit('Painel do Jhon', kpi(nRes ?? 0, 'reservas amanhã') + kpi(nAl ?? 0, 'alunos') + kpi(todas.length, 'pendências')),
     `<div class="pills">${pills}</div><div class="tbl"><table><thead><tr><th>#</th><th>Categoria</th><th>Aluno</th><th>Assunto</th><th>Aberta</th><th>Ações</th></tr></thead><tbody>${linhas || `<tr><td colspan="6" style="text-align:center;padding:30px;color:#6B7360;font-weight:700">Nenhuma pendência em aberto.</td></tr>`}</tbody></table></div>`];
 }
 async function saldos() {
   const [{ data: pac }, { data: res }] = await Promise.all([
     sb.from('pacotes').select('id,aluno_id,total,validade,valor_pago,criado_em,pago').order('criado_em', { ascending: false }),
-    sb.from('reservas').select('pacote_id,status').not('pacote_id', 'is', null).in('status', ['confirmada', 'falta', 'realizada'])
+    sb.from('reservas').select('pacote_id,status,consome_saldo').not('pacote_id', 'is', null).or('status.in.(confirmada,falta,realizada),and(status.eq.cancelada,consome_saldo.eq.true)')
   ]);
   const usado = {}; (res || []).forEach(r => usado[r.pacote_id] = (usado[r.pacote_id] || 0) + 1);
   const hoje = ymd(nowSP()), porAluno = {};
@@ -445,35 +456,35 @@ async function saldos() {
   return { pac: pac || [], porAluno };
 }
 async function pAlunos() {
-  const { data, error } = await sb.from('perfis').select('id,nome,telefone,email,tipo,papel,criado_em').order('nome', { ascending: true, nullsFirst: false });
+  const { data, error } = await sb.from('alunos').select('id,nome,telefone,tipo,user_id,responsavel_id,criado_em').order('nome', { ascending: true });
   if (error) throw error;
   const { porAluno } = await saldos();
   const busca = (S.cache.busca || '').toLowerCase();
-  const lista = (data || []).filter(a => !busca || (a.nome || '').toLowerCase().includes(busca) || (a.telefone || '').includes(busca) || (a.email || '').toLowerCase().includes(busca));
+  const lista = (data || []).filter(a => !busca || (a.nome || '').toLowerCase().includes(busca) || (a.telefone || '').includes(busca));
   const linhas = lista.map(a => { const s = porAluno[a.id] || { saldo: 0, validade: null };
-    return `<tr><td><b>${esc(a.nome || '(cadastro incompleto)')}</b><br><small style="color:#6B7360">${esc(a.email)}</small></td><td>${esc(a.telefone || '–')}</td><td><span class="cat">${esc(a.tipo)}</span></td><td><b>${s.saldo}</b></td><td>${fmtBR(s.validade)}</td><td><button class="mb g" data-act="lancar" data-id="${a.id}" data-n="${esc(a.nome || a.email)}">Lançar pacote</button></td></tr>`; }).join('');
-  return [tit('Alunos', kpi(lista.length, 'cadastrados')), `<div class="pills"><input class="in" id="busca" placeholder="Buscar por nome, telefone ou e-mail" value="${esc(S.cache.busca || '')}" style="max-width:380px;height:42px"></div>
+    return `<tr><td><b>${esc(a.nome)}</b><br><small style="color:#6B7360">${a.responsavel_id ? 'dependente' : a.user_id ? 'tem conta no app' : 'só WhatsApp'}</small></td><td>${esc(a.telefone || '–')}</td><td><span class="cat">${esc(a.tipo)}</span></td><td><b>${s.saldo}</b></td><td>${fmtBR(s.validade)}</td><td><button class="mb g" data-act="lancar" data-id="${a.id}" data-n="${esc(a.nome)}">Lançar pacote</button></td></tr>`; }).join('');
+  return [tit('Alunos', kpi(lista.length, 'cadastrados')), `<div class="pills"><input class="in" id="busca" placeholder="Buscar por nome ou telefone" value="${esc(S.cache.busca || '')}" style="max-width:380px;height:42px"></div>
     <div class="tbl"><table><thead><tr><th>Aluno</th><th>Telefone</th><th>Tipo</th><th>Saldo</th><th>Validade</th><th>Ações</th></tr></thead><tbody>${linhas || `<tr><td colspan="6" style="text-align:center;padding:30px;color:#6B7360;font-weight:700">Nenhum aluno encontrado.</td></tr>`}</tbody></table></div>`];
 }
 async function pSessoes() {
   const dia = S.cache.dia || amanhaSP();
-  const { data, error } = await sb.from('sessoes').select('id,data,hora,chegada,cota_app,cota_plataformas,status,reservas(id,status,pago,pacote_id,perfis(nome,telefone))').eq('data', dia).order('hora');
+  const { data, error } = await sb.from('sessoes').select('id,data,hora,chegada,cota_app,cota_plataformas,status,reservas(id,status,pago,pacote_id,banco_proprio,provisoria,nome_remador,alunos(nome,telefone))').eq('data', dia).order('hora');
   if (error) throw error;
-  const rot = { confirmada: 'Confirmada', espera: 'Espera', cancelada: 'Cancelada', falta: 'Falta', realizada: 'Presente' };
+  const rot = { confirmada: 'Confirmada', pagamento_pendente: 'Falta o Pix', espera: 'Espera', cancelada: 'Cancelada', falta: 'Falta', realizada: 'Presente' };
   const cards = (data || []).map(s => {
-    const conf = s.reservas.filter(r => r.status === 'confirmada' || r.status === 'falta' || r.status === 'realizada'), esp = s.reservas.filter(r => r.status === 'espera');
-    const pl = (r) => `<div class="pl"><div><b>${esc(r.perfis ? r.perfis.nome : '—')}</b><br><small>${esc(r.perfis ? r.perfis.telefone : '')} ${r.pacote_id ? '· pacote' : '· avulsa' + (r.pago ? ' (paga)' : '')}</small></div><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="st ${r.status}">${rot[r.status]}</span>
-      ${['confirmada', 'espera'].includes(r.status) ? `<button class="mb r" data-act="admcancel" data-id="${r.id}">Cancelar</button>` : ''}${r.status === 'confirmada' ? `<button class="mb o" data-act="rstat" data-id="${r.id}" data-s="falta">Falta</button><button class="mb g" data-act="rstat" data-id="${r.id}" data-s="realizada">Presente</button>` : ''}</div></div>`;
-    return `<div class="scard"><div class="t"><b>${hhmm(s.hora)}</b><span style="font-weight:800">${conf.length}/${s.cota_app} no app · +${s.cota_plataformas} plataformas</span></div>
+    const conf = s.reservas.filter(r => ['confirmada', 'pagamento_pendente', 'falta', 'realizada'].includes(r.status)), esp = s.reservas.filter(r => r.status === 'espera'), ocupam = conf.filter(r => r.banco_proprio && ['confirmada', 'pagamento_pendente'].includes(r.status)).length;
+    const pl = (r) => `<div class="pl"><div><b>${esc(r.nome_remador || (r.alunos ? r.alunos.nome : '—'))}</b><br><small>${esc(r.alunos ? r.alunos.telefone || '' : '')} ${!r.banco_proprio ? '· criança no banco' : r.pacote_id ? '· pacote' : '· avulsa' + (r.pago ? ' (paga)' : '')}${r.provisoria ? ' · provisória' : ''}</small></div><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="st ${r.status === 'pagamento_pendente' ? 'espera' : r.status}">${rot[r.status]}</span>
+      ${r.status === 'pagamento_pendente' ? `<button class="mb g" data-act="pix" data-id="${r.id}">Pix recebido</button>` : ''}${r.status === 'espera' && r.banco_proprio ? `<button class="mb g" data-act="aceitar" data-id="${r.id}">Dar a vaga</button>` : ''}${['confirmada', 'pagamento_pendente', 'espera'].includes(r.status) ? `<button class="mb r" data-act="admcancel" data-id="${r.id}">Cancelar</button>` : ''}${r.status === 'confirmada' ? `<button class="mb o" data-act="rstat" data-id="${r.id}" data-s="falta">Falta</button><button class="mb g" data-act="rstat" data-id="${r.id}" data-s="realizada">Presente</button>` : ''}</div></div>`;
+    return `<div class="scard"><div class="t"><b>${hhmm(s.hora)}</b><span style="font-weight:800">${ocupam}/${s.cota_app} no app · +${s.cota_plataformas} plataformas</span></div>
       ${conf.map(pl).join('') || '<div class="pl"><small>Nenhuma reserva confirmada.</small></div>'}${esp.length ? `<div style="font-weight:800;margin-top:10px;font-size:13px">Lista de espera</div>${esp.map(pl).join('')}` : ''}</div>`;
   }).join('') || `<div class="empty">Sem remadas neste dia.</div>`;
   return [tit('Sessões', `<div class="kpi" style="padding:6px 12px"><input type="date" id="dia" class="in" value="${dia}" style="height:38px;width:170px"></div>`), `<div class="sgrid">${cards}</div>`];
 }
 async function pPacotes() {
-  const { data: al } = await sb.from('perfis').select('id,nome,email').not('nome', 'is', null).order('nome');
+  const { data: al } = await sb.from('alunos').select('id,nome,telefone').is('responsavel_id', null).order('nome');
   const { pac } = await saldos();
   const nomes = Object.fromEntries((al || []).map(a => [a.id, a.nome]));
-  const opts = (al || []).map(a => `<option value="${a.id}">${esc(a.nome)} · ${esc(a.email)}</option>`).join('');
+  const opts = (al || []).map(a => `<option value="${a.id}">${esc(a.nome)} · ${esc(a.telefone || '')}</option>`).join('');
   const preco = n => S.cfg['pacote_' + n + '_valor'] || '';
   const linhas = pac.slice(0, 60).map(p => `<tr><td><b>${esc(nomes[p.aluno_id] || '—')}</b></td><td>${p.total} remadas</td><td>${p.usadas} usadas · <b>${p.saldo}</b> restam</td><td>${fmtBR(p.validade)}</td><td>${p.valor_pago != null ? 'R$ ' + Number(p.valor_pago).toFixed(2).replace('.', ',') : '–'}</td></tr>`).join('');
   return [tit('Pacotes'), `<div class="tbl" style="margin-bottom:16px;padding:18px"><div class="formline"><div><label class="f" style="color:#0A0A0A;margin-top:0">Aluno</label><select class="in" id="pAluno">${opts}</select></div>
@@ -504,14 +515,16 @@ const A = {
     const { data, error } = await sb.rpc('reservar', { p_sessao: b.dataset.id });
     fechar();
     if (error) { toast(erro(error), true); return render(); }
-    toast(data.status === 'espera' ? 'Você entrou na lista de espera.' : 'Reserva confirmada!'); render();
+    if (!data.ok) { toast(data.mensagem || 'Não foi possível reservar.', true); return render(); }
+    toast(data.status === 'espera' ? 'Você entrou na lista de espera.' : data.status === 'pagamento_pendente' ? 'Vaga guardada! Falta o Pix.' : 'Reserva confirmada!'); render();
   },
-  cancelar: b => sheet(`<h3>Cancelar reserva?</h3><p style="margin:0 0 4px;font-size:15px">Se a reserva usa pacote, a remada volta para o seu saldo.</p>
-    <button class="btn" data-act="cancelarok" data-id="${b.dataset.id}">Sim, cancelar</button><button class="btn ghost" data-act="fechar">Manter reserva</button>`),
+  cancelar: b => { const late = b.dataset.late === '1'; sheet(`<h3>${late ? 'Liberar vaga?' : 'Cancelar reserva?'}</h3><p style="margin:0 0 4px;font-size:15px">${late ? 'O prazo de cancelamento já terminou, então a remada continua descontada do seu pacote. Se você liberar, outra pessoa pode ficar com a vaga.' : 'Se a reserva usa pacote, a remada volta para o seu saldo.'}</p>
+    <button class="btn" data-act="cancelarok" data-id="${b.dataset.id}" data-late="${late ? '1' : ''}">${late ? 'Sim, liberar a vaga' : 'Sim, cancelar'}</button><button class="btn ghost" data-act="fechar">Manter reserva</button>`); },
   cancelarok: async b => {
     b.disabled = true;
-    const { data, error } = await sb.rpc('cancelar', { p_reserva: b.dataset.id }); fechar();
+    const { data, error } = await sb.rpc('cancelar', { p_reserva: b.dataset.id, p_liberar: b.dataset.late === '1' }); fechar();
     if (error) return toast(erro(error), true);
+    if (!data.ok) return toast(data.mensagem || 'Não foi possível cancelar.', true);
     toast(data.saldo_devolvido ? 'Reserva cancelada. A remada voltou ao seu saldo.' : 'Reserva cancelada.'); render();
   },
   fechar, fecharfundo: (b, e) => { if (e.target === b) fechar(); },
@@ -528,7 +541,9 @@ const A = {
     <button class="btn g" data-act="lancarok" data-id="${b.dataset.id}">Confirmar lançamento</button><button class="btn ghost" data-act="fechar">Voltar</button>`),
   lancarok: b => lancar(b.dataset.id, $('#mTam').value),
   lancarform: () => lancar($('#pAluno').value, $('#pTam').value),
-  admcancel: async b => { const { error } = await sb.rpc('cancelar', { p_reserva: b.dataset.id }); if (error) return toast(erro(error), true); toast('Reserva cancelada.'); render(); },
+  admcancel: async b => { const { data, error } = await sb.rpc('admin_cancelar', { p_reserva: b.dataset.id, p_liberar: true }); if (error) return toast(erro(error), true); if (!data.ok) return toast(data.mensagem, true); toast(data.chamar_espera ? 'Cancelada. Próximo da espera: ' + data.chamar_espera.nome : 'Reserva cancelada.'); render(); },
+  pix: async b => { const { data, error } = await sb.rpc('admin_marcar_pago', { p_reserva: b.dataset.id }); if (error) return toast(erro(error), true); if (!data.ok) return toast(data.mensagem, true); toast('Pix registrado. Reserva confirmada.'); render(); },
+  aceitar: async b => { const { data, error } = await sb.rpc('admin_aceitar_espera', { p_reserva: b.dataset.id }); if (error) return toast(erro(error), true); if (!data.ok) return toast(data.mensagem, true); toast('Vaga concedida.'); render(); },
   rstat: async b => { const { error } = await sb.from('reservas').update({ status: b.dataset.s }).eq('id', b.dataset.id); if (error) return toast(erro(error), true); toast('Registrado.'); render(); }
 };
 function msgBox(t, bad) { const m = $('#fmsg'); if (m) m.innerHTML = `<div class="msg ${bad ? 'err' : 'ok'}" role="alert">${esc(t)}</div>`; }
