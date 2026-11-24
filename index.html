@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050505">
+<title>Honu Kai Va'a · Reservas</title>
+<link rel="icon" href="./logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Coco Biker';src:url('./CocoBiker.ttf') format('truetype');font-display:swap}
+:root{--g:#B7DE7A;--g2:#9CC85B;--k:#050505;--k2:#111;--w:#fff;--mut:#6B7360;--tint:#E9F2DC;--line:#DCE8CC;--err:#FFB4A6;
+  --disp:'Coco Biker','Lilita One',cursive;--body:'Nunito',system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--k);color:var(--w);font-family:var(--body);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;min-height:100dvh}
+button,input,select{font:inherit}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--g);outline-offset:2px}
+/* fundo */
+.bg{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none}
+.tapa-bg{position:absolute;inset:0;opacity:.09;background-size:96px 96px}
+.tapa-top,.tapa-bot{position:absolute;left:0;right:0;height:22px;background-size:36px 22px}
+.tapa-top{top:0}.tapa-bot{bottom:0;transform:scaleY(-1)}
+.wv{position:absolute;left:0;width:200%;animation:drift 18s linear infinite}
+.wv svg{display:block;width:100%;height:120px}
+.w1{bottom:0}.w2{bottom:56px;animation-duration:26s;animation-direction:reverse}.w3{bottom:120px;animation-duration:36s;opacity:.7}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.wv{animation:none}}
+#app{position:relative;z-index:1;min-height:100vh;min-height:100dvh}
+/* layout aluno */
+.phone{max-width:460px;margin:0 auto;padding:34px 18px 110px}
+.brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;margin-bottom:22px}
+.brand img{width:96px;height:96px;border-radius:50%;box-shadow:0 0 0 2px var(--g),0 14px 40px rgba(0,0,0,.6)}
+.brand h1{margin:8px 0 0;font:400 38px/1.05 var(--disp);letter-spacing:.01em}
+.brand p{margin:0;color:var(--g);font-weight:700;font-size:15px}
+.mini{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.mini img{width:48px;height:48px;border-radius:50%;box-shadow:0 0 0 2px var(--g);flex:none}
+.mini .t{flex:1;min-width:0}.mini .t small{display:block;font-weight:700;font-size:13px;color:#cfd6c2}
+.mini .t b{display:block;font:400 25px/1.05 var(--disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{display:inline-flex;align-items:center;border-radius:999px;padding:7px 14px;font-weight:800;font-size:13px;background:var(--g);color:var(--k);text-align:center;line-height:1.15}
+.chip.out{background:transparent;color:var(--w);box-shadow:inset 0 0 0 2px #ffffff55}
+h2.disp,h1.disp{font:400 32px/1.05 var(--disp);margin:0}
+.sub{margin:4px 0 14px;font-weight:800;font-size:15px;text-transform:capitalize}
+.card{background:rgba(255,255,255,.97);color:#0A0A0A;border-radius:26px;padding:22px;box-shadow:0 22px 50px rgba(0,0,0,.45)}
+.card h2{margin:0 0 4px;font:400 28px/1.1 var(--disp)}
+.card p.lead{margin:0 0 16px;color:#4A5340;font-size:14px}
+.tabs{display:flex;background:var(--tint);border-radius:16px;padding:4px;gap:4px;margin-bottom:6px}
+.tabs button{flex:1;border:0;background:transparent;border-radius:12px;padding:11px 0;font-weight:800;font-size:15px;color:#0A0A0A;cursor:pointer}
+.tabs button.on{background:#0A0A0A;color:#fff}
+label.f{display:block;font-size:13px;font-weight:800;margin:14px 0 6px}
+input.in,select.in{width:100%;height:50px;border:2px solid #C9D8B4;border-radius:14px;padding:0 14px;font-size:16px;background:#fff;color:#0A0A0A}
+input.in:focus,select.in:focus{border-color:#0A0A0A;outline:none;box-shadow:0 0 0 3px var(--g)}
+.hint{font-size:12px;color:#4A5340;margin:8px 0 0}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13px;margin-top:14px}
+.check input{width:22px;height:22px;margin:0;accent-color:#0A0A0A;flex:none}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:54px;border-radius:16px;border:0;background:#0A0A0A;color:#fff;font-weight:800;font-size:17px;cursor:pointer;margin-top:18px;transition:transform .08s,filter .15s}
+.btn:active{transform:scale(.98)}.btn:hover{filter:brightness(1.12)}
+.btn.g{background:var(--g);color:#0A0A0A}
+.btn.ghost{background:transparent;color:#0A0A0A;box-shadow:inset 0 0 0 2px #0A0A0A}
+.btn.sm{height:42px;font-size:14px;margin-top:0;border-radius:12px;width:auto;padding:0 18px}
+.btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+.link{background:none;border:0;padding:0;font-weight:700;font-size:13px;color:#2F6B12;cursor:pointer;text-decoration:underline}
+.msg{border-radius:12px;padding:10px 12px;font-size:13px;font-weight:700;margin-top:12px}
+.msg.err{background:#3a1410;color:var(--err)}.msg.ok{background:#E3F2C9;color:#1F3F0A}
+.card .msg.err{background:#FDE5E0;color:#8A2A18}
+.note{background:rgba(255,255,255,.1);border-radius:14px;padding:10px 12px;font-size:12.5px;font-weight:600;line-height:1.45;margin-bottom:14px;backdrop-filter:blur(2px)}
+.note b{color:var(--g)}
+/* sessões */
+.sessions{display:flex;flex-direction:column;gap:12px}
+.sess{background:rgba(255,255,255,.97);color:#0A0A0A;border-radius:24px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center;box-shadow:0 12px 30px rgba(0,0,0,.4);position:relative;overflow:hidden}
+.sess::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--g)}
+.sess.full::before{background:#0A0A0A}
+.sess .hora{font:400 38px/1 var(--disp);padding-left:8px}
+.sess .hora small{display:block;font:700 12px var(--body);color:var(--mut);margin-top:4px;letter-spacing:.02em}
+.sess .meta{display:flex;flex-direction:column;gap:7px;align-items:flex-start;min-width:0}
+.dots{display:flex;gap:5px;flex-wrap:wrap}
+.dots i{width:12px;height:12px;border-radius:50%;background:var(--g);box-shadow:inset 0 0 0 2px #0A0A0A}
+.dots i.x{background:#0A0A0A}
+.vag{font-size:12.5px;font-weight:800;border-radius:999px;padding:3px 10px;background:#E3F2C9;color:#1F3F0A}
+.vag.full{background:#0A0A0A;color:var(--g)}.vag.mine{background:var(--g);color:#0A0A0A}
+.sess .act{grid-column:1/-1;display:flex;gap:8px}
+.sess .act .btn{margin:0;height:46px;font-size:15px;border-radius:14px}
+.grade{margin-top:16px}
+.grade summary{cursor:pointer;font-weight:800;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.grade summary::-webkit-details-marker{display:none}
+.grade summary::after{content:"+";font:400 24px var(--disp);color:var(--g)}
+.grade[open] summary::after{content:"–"}
+.grade .gr{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid #ffffff22;font-size:14px}
+.grade .gr b{display:block}
+.grade .times{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.grade .times span{background:var(--g);color:#0A0A0A;font-weight:800;border-radius:999px;padding:4px 10px;font-size:13px}
+.glass{background:rgba(255,255,255,.08);border-radius:22px;padding:16px 18px;backdrop-filter:blur(3px)}
+/* nav */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:#fff;color:#0A0A0A;display:flex;justify-content:center;box-shadow:0 -8px 26px rgba(0,0,0,.45);padding-bottom:env(safe-area-inset-bottom)}
+.nav .in{display:flex;width:100%;max-width:460px}
+.nav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 9px;color:#6B7360;font-weight:700;font-size:12px;cursor:pointer}
+.nav button.on{color:#0A0A0A;font-weight:800}
+.nav button.on::after{content:"";width:28px;height:4px;border-radius:2px;background:var(--g);margin-top:1px}
+.nav svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* sheet */
+.scrim{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
+.sheet{background:#fff;color:#0A0A0A;width:100%;max-width:460px;border-radius:28px 28px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom));animation:up .22s ease-out}
+.sheet h3{margin:0 0 12px;font:400 28px/1.1 var(--disp)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px;gap:12px}
+.row:last-of-type{border-bottom:0}.row b{font-weight:800;text-align:right}
+@keyframes fade{from{opacity:0}}@keyframes up{from{transform:translateY(40px);opacity:.4}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:30;background:var(--g);color:#0A0A0A;font-weight:800;border-radius:999px;padding:11px 20px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:90vw;text-align:center}
+.toast.err{background:#FFB4A6}
+/* reservas */
+.res{background:rgba(255,255,255,.97);color:#0A0A0A;border-radius:22px;padding:14px 16px;margin-bottom:10px;box-shadow:0 10px 26px rgba(0,0,0,.35)}
+.res .top{display:flex;align-items:center;gap:12px}.res .top>div{flex:1;min-width:0}
+.res small{font-weight:700;color:#3F4636;font-size:13px;text-transform:capitalize}
+.res .h{font:400 30px/1.1 var(--disp)}
+.st{border-radius:999px;padding:5px 12px;font-size:12px;font-weight:800;background:#E4F1F3}
+.st.confirmada{background:var(--g)}.st.espera{background:#FFE9A8}.st.cancelada{background:#0A0A0A;color:var(--g)}.st.falta{background:#FFB4A6}.st.realizada{background:#E9F2DC;color:#3F4636}
+.empty{text-align:center;padding:34px 10px;color:#cfd6c2;font-weight:700}
+.center{display:flex;min-height:100vh;min-height:100dvh;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.spin{width:38px;height:38px;border-radius:50%;border:4px solid #ffffff33;border-top-color:var(--g);animation:rot 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+/* painel */
+.adm{display:flex;min-height:100vh;min-height:100dvh}
+.side{width:240px;flex:none;background:#0A0A0A;border-right:2px solid var(--g);padding:22px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;height:100dvh}
+.side .logo{display:flex;align-items:center;gap:12px;margin-bottom:20px}.side .logo img{width:50px;height:50px;border-radius:50%;box-shadow:0 0 0 2px var(--g)}
+.side .logo b{font:400 21px/1.05 var(--disp)}
+.side button{border:0;background:none;color:#C9D8B4;text-align:left;padding:11px 14px;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;display:flex;justify-content:space-between}
+.side button.on{background:var(--g);color:#0A0A0A;font-weight:800}
+.side button .n{background:#0A0A0A;color:var(--g);border-radius:999px;padding:0 8px;font-size:12px;line-height:20px}
+.side .sp{flex:1}
+.main{flex:1;min-width:0;padding:26px 30px 60px}
+.main .head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.kpis{display:flex;gap:10px;flex-wrap:wrap}
+.kpi{background:#fff;color:#0A0A0A;border-radius:16px;padding:10px 18px;text-align:center}.kpi b{display:block;font-size:26px;line-height:1}.kpi small{font-weight:700;font-size:12px;color:#4A5340}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.pills button{border:0;border-radius:999px;padding:8px 16px;font-weight:700;font-size:14px;background:#fff;color:#0A0A0A;cursor:pointer}
+.pills button.on{background:var(--g);font-weight:800}
+.tbl{background:rgba(255,255,255,.97);color:#0A0A0A;border-radius:22px;padding:8px 12px;box-shadow:0 14px 34px rgba(0,0,0,.4);overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;min-width:640px}
+.tbl th{text-align:left;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#6B7360;padding:10px 12px;border-bottom:2px solid var(--line)}
+.tbl td{padding:12px;font-size:14px;border-bottom:1px solid var(--tint);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.cat{display:inline-block;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:800;background:var(--tint)}
+.cat.financeiro{background:#FFE9B8}.cat.marketing{background:#E1D6FF}.cat.suporte{background:#D6E8FF}.cat.reservas{background:#DDF0BE}
+.mb{display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:10px;font-size:13px;font-weight:800;border:0;background:#0A0A0A;color:#fff;cursor:pointer;margin:2px 6px 2px 0}
+.mb.o{background:#fff;color:#0A0A0A;box-shadow:inset 0 0 0 2px #0A0A0A}.mb.g{background:var(--g);color:#0A0A0A}.mb.r{background:#FDE5E0;color:#8A2A18}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.scard{background:rgba(255,255,255,.97);color:#0A0A0A;border-radius:22px;padding:16px;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.scard .t{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}.scard .t b{font:400 32px/1 var(--disp)}
+.pl{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--tint);font-size:14px}
+.pl small{color:#6B7360;font-weight:700}
+.formline{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}.formline>div{flex:1;min-width:180px}
+@media (max-width:820px){.adm{flex-direction:column}.side{width:auto;height:auto;position:static;flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:2px solid var(--g)}.side .logo{width:100%;margin:0}.side .sp{display:none}.main{padding:18px 14px 50px}}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+  <div class="tapa-bg" id="tapaBg"></div><div class="tapa-top" id="tapaTop"></div><div class="tapa-bot" id="tapaBot"></div>
+  <div class="wv w3"><svg viewBox="0 0 2400 120" preserveAspectRatio="none"><path d="M0 60Q300 0 600 60T1200 60T1800 60T2400 60L2400 120L0 120Z" fill="rgba(183,222,122,.16)"/></svg></div>
+  <div class="wv w2"><svg viewBox="0 0 2400 120" preserveAspectRatio="none"><path d="M0 60Q300 0 600 60T1200 60T1800 60T2400 60L2400 120L0 120Z" fill="rgba(183,222,122,.24)"/></svg></div>
+  <div class="wv w1"><svg viewBox="0 0 2400 120" preserveAspectRatio="none"><path d="M0 60Q300 0 600 60T1200 60T1800 60T2400 60L2400 120L0 120Z" fill="rgba(183,222,122,.34)"/></svg></div>
+</div>
+<main id="app"><div class="center"><div class="spin"></div></div></main>
+<div id="layer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===== Configuração ===== */
+const SUPABASE_URL = 'https://fvzxqhoexkjqzgihwhnp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_MlLTRFAonNd6zXDGolg5VA_tOucA8dl';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+
+/* ===== Utilidades ===== */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const hhmm = t => String(t || '').slice(0, 5);
+const nowSP = () => new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const fmtLong = s => parseD(s).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+const fmtShort = s => parseD(s).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+const fmtBR = s => s ? parseD(s).toLocaleDateString('pt-BR') : '–';
+const amanhaSP = () => { const d = nowSP(); d.setDate(d.getDate() + 1); return ymd(d); };
+const primeiro = n => (n || '').trim().split(/\s+/)[0] || '';
+const ERR = {
+  nao_autenticado: 'Sua sessão expirou. Entre novamente.',
+  cadastro_incompleto: 'Complete seu cadastro antes de reservar.',
+  sessao_indisponivel: 'Este horário não está disponível.',
+  so_amanha: 'As reservas são sempre para o dia seguinte.',
+  reservas_encerradas: 'As reservas de amanhã já fecharam (20:00).',
+  ainda_nao_abriu: 'As reservas ainda não abriram para o seu perfil.',
+  ja_reservada: 'Você já tem reserva neste horário.',
+  dependente_invalido: 'Dependente inválido.',
+  reserva_nao_encontrada: 'Reserva não encontrada.',
+  reserva_nao_cancelavel: 'Esta reserva não pode mais ser cancelada.',
+  fora_do_prazo: 'O prazo de cancelamento terminou às 20:00 de hoje. Fale com o Jhon.',
+  telefone_ja_cadastrado: 'Este telefone já está cadastrado em outra conta.',
+  telefone_invalido: 'Informe o telefone com DDD, por exemplo (27) 99999-0000.',
+  nome_invalido: 'Informe seu nome completo.',
+  somente_admin: 'Apenas o administrador pode fazer isso.'
+};
+function erro(e) {
+  const m = (e && e.message) || '';
+  if (ERR[m]) return ERR[m];
+  if (/invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
+  if (/not confirmed/i.test(m)) return 'Confirme seu e-mail pelo link que enviamos antes de entrar.';
+  if (/already registered|already been registered/i.test(m)) return 'Este e-mail já tem conta. Use a aba Entrar.';
+  if (/at least|weak|short/i.test(m)) return 'Escolha uma senha com pelo menos 8 caracteres.';
+  if (/rate limit|too many/i.test(m)) return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
+  if (/fetch|network/i.test(m)) return 'Sem conexão. Verifique a internet e tente de novo.';
+  return 'Algo deu errado. Tente de novo.';
+}
+function toast(texto, bad) {
+  const t = document.createElement('div'); t.className = 'toast' + (bad ? ' err' : ''); t.textContent = texto; t.setAttribute('role', 'status');
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
+}
+const ICON = {
+  cal: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  list: '<svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+  panel: '<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="9" rx="2"/><rect x="13.5" y="3.5" width="7" height="5" rx="2"/><rect x="13.5" y="11.5" width="7" height="9" rx="2"/><rect x="3.5" y="15.5" width="7" height="5" rx="2"/></svg>',
+  out: '<svg viewBox="0 0 24 24"><path d="M9 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H9M15 8l4 4-4 4M19 12H9"/></svg>'
+};
+
+/* padrão polinésio (espirais + dentes de tubarão) desenhado em SVG */
+(function () {
+  const G = '%23B7DE7A';
+  const tile = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96' fill='none' stroke='${G}' stroke-width='2.2' stroke-linecap='round'><path d='M48 48a4 4 0 1 1 8 0a8 8 0 1 1-16 0a12 12 0 1 1 24 0a16 16 0 1 1-32 0'/><path d='M0 0l10 0l-5 9z M86 0l10 0l-5 9z M0 96l10 0l-5-9z M86 96l10 0l-5-9z' fill='${G}' stroke='none'/></svg>`;
+  const band = `<svg xmlns='http://www.w3.org/2000/svg' width='36' height='22' viewBox='0 0 36 22'><path d='M0 0h18l-9 16z' fill='${G}'/><path d='M18 0h18l-9 16z' fill='none' stroke='${G}' stroke-width='2'/><circle cx='9' cy='5' r='1.8' fill='%23050505'/></svg>`;
+  $('#tapaBg').style.backgroundImage = `url("data:image/svg+xml;utf8,${tile}")`;
+  $('#tapaTop').style.backgroundImage = $('#tapaBot').style.backgroundImage = `url("data:image/svg+xml;utf8,${band}")`;
+})();
+
+/* ===== Estado ===== */
+const S = { user: null, perfil: null, cfg: {}, view: null, aba: 'pendencias', recovery: false, cache: {} };
+
+/* ===== Autenticação e carga ===== */
+async function boot() {
+  const { data } = await sb.auth.getSession();
+  S.user = data.session ? data.session.user : null;
+  sb.auth.onAuthStateChange(async (ev, sess) => {
+    if (ev === 'PASSWORD_RECOVERY') { S.recovery = true; S.user = sess.user; return go('recuperar'); }
+    if (ev === 'SIGNED_OUT') { S.user = null; S.perfil = null; return go('entrar'); }
+    if (ev === 'SIGNED_IN' && (!S.user || S.user.id !== sess.user.id)) { S.user = sess.user; await carregar(); }
+  });
+  if (S.user) await carregar(); else go('entrar');
+}
+async function carregar() {
+  try {
+    const [{ data: p, error: e1 }, { data: c }] = await Promise.all([
+      sb.from('perfis').select('*').eq('id', S.user.id).maybeSingle(),
+      sb.from('configuracao').select('chave,valor')
+    ]);
+    if (e1) throw e1;
+    S.perfil = p; S.cfg = Object.fromEntries((c || []).map(r => [r.chave, r.valor]));
+    if (S.recovery) return go('recuperar');
+    if (!p || !p.nome || !p.telefone) return go('cadastro');
+    const h = location.hash.replace('#', '');
+    go(h && h !== 'entrar' && h !== 'criar' && h !== 'cadastro' ? h : 'aulas');
+  } catch (e) { go('entrar'); toast(erro(e), true); }
+}
+function go(v) { S.view = v; if (location.hash !== '#' + v) history.replaceState(null, '', '#' + v); render(); }
+window.addEventListener('hashchange', () => { const v = location.hash.replace('#', ''); if (S.user && v && v !== S.view) go(v); });
+const isAdmin = () => S.perfil && S.perfil.papel === 'admin';
+
+/* ===== Render ===== */
+function render() {
+  const v = S.view, app = $('#app');
+  window.scrollTo(0, 0);
+  if (v === 'entrar' || v === 'criar') return app.innerHTML = vAuth(v);
+  if (v === 'recuperar') return app.innerHTML = vRecuperar();
+  if (!S.user) return go('entrar');
+  if (v === 'cadastro') return app.innerHTML = vCadastro();
+  if (v.startsWith('painel')) { if (!isAdmin()) return go('aulas'); return vPainel(); }
+  if (v === 'reservas') return vReservas();
+  return vAulas();
+}
+const marca = () => `<div class="brand"><img src="./logo.png" alt="Honu Kai Va'a"><h1>Honu Kai Va'a</h1><p>Remada de canoa havaiana</p></div>`;
+const nav = () => `<nav class="nav" aria-label="Navegação"><div class="in">
+  <button data-go="aulas" class="${S.view === 'aulas' ? 'on' : ''}">${ICON.cal}Aulas</button>
+  <button data-go="reservas" class="${S.view === 'reservas' ? 'on' : ''}">${ICON.list}Minhas reservas</button>
+  ${isAdmin() ? `<button data-go="painel-pendencias">${ICON.panel}Painel</button>` : ''}
+  <button data-act="sair">${ICON.out}Sair</button></div></nav>`;
+const topo = () => `<div class="mini"><img src="./logo.png" alt=""><div class="t"><small>Aloha,</small><b>${esc(primeiro(S.perfil.nome))}</b></div><span class="chip" id="saldoChip">…</span></div>`;
+
+function vAuth(v) {
+  const entrar = v === 'entrar';
+  return `<div class="phone">${marca()}<div class="card">
+  <div class="tabs" role="tablist"><button role="tab" data-go="entrar" class="${entrar ? 'on' : ''}">Entrar</button><button role="tab" data-go="criar" class="${entrar ? '' : 'on'}">Criar conta</button></div>
+  <form data-form="${entrar ? 'login' : 'signup'}" novalidate>
+    <h2 style="margin-top:16px">${entrar ? 'Aloha!' : 'Bem-vindo(a) a bordo'}</h2>
+    <p class="lead">${entrar ? 'Entre para reservar suas remadas.' : 'Passo 1 de 2 · seu acesso ao app.'}</p>
+    <label class="f" for="email">E-mail</label><input class="in" id="email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="voce@email.com" required>
+    <label class="f" for="senha">${entrar ? 'Senha' : 'Crie uma senha'}</label><input class="in" id="senha" name="senha" type="password" autocomplete="${entrar ? 'current-password' : 'new-password'}" placeholder="${entrar ? 'Sua senha' : 'Mínimo de 8 caracteres'}" minlength="8" required>
+    ${entrar ? `<div style="text-align:right;margin-top:10px"><button type="button" class="link" data-act="esqueci">Esqueci minha senha</button></div>` : `<p class="hint">Você pode precisar confirmar o e-mail por um link que enviaremos.</p>`}
+    <div id="fmsg"></div>
+    <button class="btn" type="submit">${entrar ? 'Entrar' : 'Continuar'}</button>
+  </form></div>
+  <p style="text-align:center;font-size:12px;font-weight:600;margin-top:18px;color:#cfd6c2">${entrar ? 'Ao entrar você concorda com o aviso de privacidade do clube.' : 'Sua senha é guardada com criptografia. Nem o clube consegue vê-la.'}</p></div>`;
+}
+function vRecuperar() {
+  return `<div class="phone">${marca()}<div class="card"><form data-form="novasenha" novalidate><h2>Nova senha</h2><p class="lead">Escolha uma nova senha para a sua conta.</p>
+  <label class="f" for="senha">Nova senha</label><input class="in" id="senha" name="senha" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required>
+  <div id="fmsg"></div><button class="btn" type="submit">Salvar senha</button></form></div></div>`;
+}
+function vCadastro() {
+  return `<div class="phone">${marca()}<div class="card">
+  <div style="display:flex;gap:8px"><div style="height:6px;flex:1;border-radius:3px;background:#0A0A0A"></div><div style="height:6px;flex:1;border-radius:3px;background:#0A0A0A"></div></div>
+  <form data-form="cadastro" novalidate><h2 style="margin-top:16px">Quase lá</h2><p class="lead">Passo 2 de 2 · só mais dois dados.</p>
+  <div style="display:flex;gap:10px;align-items:center;background:#E9F2DC;border-radius:14px;padding:10px 14px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span style="font-size:14px;font-weight:700;word-break:break-all">${esc(S.user.email)}</span></div>
+  <label class="f" for="nome">Nome completo</label><input class="in" id="nome" name="nome" autocomplete="name" placeholder="Nome e sobrenome" required>
+  <label class="f" for="tel">Telefone (WhatsApp)</label><input class="in" id="tel" name="tel" type="tel" autocomplete="tel" inputmode="tel" placeholder="(27) 99999-0000" required>
+  <p class="hint">É com esse número que o clube reconhece você no WhatsApp.</p>
+  <label class="check"><input type="checkbox" name="priv" required><span>Li e concordo com o aviso de privacidade do clube.</span></label>
+  <label class="check"><input type="checkbox" name="mkt"><span>Quero receber novidades e promoções do clube (opcional).</span></label>
+  <div id="fmsg"></div><button class="btn" type="submit">Concluir cadastro</button></form></div></div>`;
+}
+
+/* ===== Aulas ===== */
+async function vAulas() {
+  const app = $('#app');
+  app.innerHTML = `<div class="phone">${topo()}<div class="center" style="min-height:40vh"><div class="spin"></div></div></div>${nav()}`;
+  const [{ data: ss, error }, { data: jan }, { data: sal }] = await Promise.all([sb.rpc('listar_sessoes'), sb.rpc('janela_reservas'), sb.rpc('meu_saldo')]);
+  if (S.view !== 'aulas') return;
+  if (error) { toast(erro(error), true); }
+  const saldo = sal && sal[0] ? sal[0] : { saldo: 0, validade: null };
+  S.cache.janela = jan; S.cache.saldo = saldo; S.cache.sessoes = ss || [];
+  const aberta = jan && jan.aberta;
+  const chip = saldo.saldo > 0 ? `${saldo.saldo} ${saldo.saldo === 1 ? 'remada' : 'remadas'}<br><small style="font-weight:600;font-size:11px">até ${fmtBR(saldo.validade).slice(0, 5)}</small>` : 'Sem pacote';
+  const dia = jan ? jan.data : amanhaSP();
+  let aviso = '';
+  if (jan) {
+    if (aberta) aviso = `Reservas abertas até as <b>${jan.fecha}</b>. Cancelamento devolve a remada ao saldo até esse horário.`;
+    else if (nowSP().getHours() * 60 + nowSP().getMinutes() >= (+jan.fecha.slice(0, 2)) * 60 + (+jan.fecha.slice(3))) aviso = `As reservas de amanhã <b>já fecharam</b> (${jan.fecha}). Elas reabrem amanhã às <b>${jan.tem_pacote ? jan.abre_pacote : jan.abre_geral}</b>.`;
+    else aviso = `As reservas abrem às <b>${jan.abre_para_mim}</b> para o seu perfil. Pacotes: ${jan.abre_pacote} · demais alunos: ${jan.abre_geral} · fecham ${jan.fecha}.`;
+  }
+  const cards = (ss || []).map(s => {
+    const ocup = s.cota - s.vagas;
+    const dots = Array.from({ length: s.cota }, (_, i) => `<i class="${i < ocup ? 'x' : ''}"></i>`).join('');
+    const minha = s.minha_status;
+    const tag = minha === 'confirmada' ? `<span class="vag mine">Sua vaga está garantida</span>` : minha === 'espera' ? `<span class="vag mine">Você está na lista de espera</span>` : s.lotado ? `<span class="vag full">Lotado</span>` : `<span class="vag">${s.vagas} ${s.vagas === 1 ? 'vaga' : 'vagas'}</span>`;
+    let acao;
+    if (minha) acao = `<button class="btn ghost" data-go="reservas">Ver minha reserva</button>`;
+    else if (!aberta) acao = `<button class="btn" disabled>${jan ? 'Abre às ' + jan.abre_para_mim : 'Indisponível'}</button>`;
+    else if (s.lotado) acao = `<button class="btn ghost" data-act="reservar" data-id="${s.id}">Entrar na lista de espera</button>`;
+    else acao = `<button class="btn g" data-act="reservar" data-id="${s.id}">Reservar</button>`;
+    return `<article class="sess ${s.lotado ? 'full' : ''}"><div class="hora">${hhmm(s.hora)}<small>Chegada ${hhmm(s.chegada)}</small></div>
+      <div class="meta"><div class="dots" aria-label="${ocup} de ${s.cota} vagas ocupadas">${dots}</div>${tag}</div><div class="act">${acao}</div></article>`;
+  }).join('') || `<div class="empty">Não há remadas programadas para amanhã.<br>Segunda-feira não tem aula, exceto em feriados.</div>`;
+  app.innerHTML = `<div class="phone">
+    <div class="mini"><img src="./logo.png" alt=""><div class="t"><small>Aloha,</small><b>${esc(primeiro(S.perfil.nome))}</b></div><span class="chip ${saldo.saldo > 0 ? '' : 'out'}" style="text-align:center">${chip}</span></div>
+    <h1 class="disp">Remadas de amanhã</h1><p class="sub">${esc(fmtLong(dia))}</p>
+    <div class="note">${aviso}</div>
+    <div class="sessions">${cards}</div>
+    <details class="glass grade"><summary>Grade de horários</summary>
+      <div class="gr"><div><b>Terça a sexta</b><small style="color:#cfd6c2">Aulas matinais</small></div><div class="times"><span>04:40</span><span>06:10</span></div></div>
+      <div class="gr"><div><b>Sábado, domingo e feriados</b><small style="color:#cfd6c2">Quatro turmas</small></div><div class="times"><span>04:40</span><span>06:10</span><span>07:20</span><span>08:30</span></div></div>
+      <div class="gr"><div><b>Segunda-feira</b></div><div style="text-align:right;color:#cfd6c2">Sem aula, exceto feriados</div></div>
+      <div class="gr"><div><b>Ponto de encontro</b>${esc(S.cfg.endereco || '')}<br><small style="color:#cfd6c2">${esc(S.cfg.referencia || '')}</small></div>${S.cfg.link_mapa ? `<a class="chip" href="${esc(S.cfg.link_mapa)}" target="_blank" rel="noopener">Ver no mapa</a>` : ''}</div>
+    </details></div>${nav()}`;
+}
+function abrirReservar(id) {
+  const s = (S.cache.sessoes || []).find(x => x.id === id); if (!s) return;
+  const sal = S.cache.saldo || { saldo: 0 }, jan = S.cache.janela || {};
+  const pacote = jan.tem_pacote && sal.saldo > 0;
+  const linhas = `<div class="row"><span>Data</span><b>${esc(fmtShort(s.data))}</b></div><div class="row"><span>Remada</span><b style="font:400 26px var(--disp)">${hhmm(s.hora)}</b></div><div class="row"><span>Chegada</span><b>${hhmm(s.chegada)}</b></div><div class="row"><span>Local</span><b>Praia do Canto</b></div>` +
+    (s.lotado ? `<div class="row"><span>Situação</span><b>Lista de espera</b></div>` : pacote ? `<div class="row"><span>Saldo atual</span><b>${sal.saldo} remadas</b></div><div class="row"><span>Após reservar</span><b>${sal.saldo - 1} remadas</b></div><div class="row"><span>Validade do pacote</span><b>${fmtBR(sal.validade)}</b></div>` : `<div class="row"><span>Tipo</span><b>Remada avulsa</b></div><div class="row"><span>Valor</span><b>R$ ${esc(S.cfg.valor_remada_avulsa || '60')}</b></div>`);
+  const aviso = s.lotado ? 'Se alguém cancelar, sua vaga é confirmada automaticamente e você recebe o aviso.' : pacote ? `Você pode cancelar até as ${jan.fecha || '20:00'} de hoje e a remada volta para o seu saldo.` : `O pagamento da remada avulsa é feito por Pix até as ${jan.fecha || '20:00'}. O Jhon envia os dados no WhatsApp.`;
+  sheet(`<h3>${s.lotado ? 'Lista de espera' : 'Confirmar reserva'}</h3>${linhas}<p class="hint" style="margin:10px 0 0">${aviso}</p>
+    <button class="btn g" data-act="confirmar" data-id="${id}">${s.lotado ? 'Entrar na lista de espera' : 'Confirmar reserva'}</button><button class="btn ghost" data-act="fechar">Voltar</button>`);
+}
+function sheet(html) {
+  $('#layer').innerHTML = `<div class="scrim" data-act="fecharfundo"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+}
+const fechar = () => { $('#layer').innerHTML = ''; };
+
+/* ===== Minhas reservas ===== */
+async function vReservas() {
+  const app = $('#app');
+  app.innerHTML = `<div class="phone"><div class="mini"><img src="./logo.png" alt=""><div class="t"><b style="font-size:30px">Minhas reservas</b></div></div><div class="center" style="min-height:40vh"><div class="spin"></div></div></div>${nav()}`;
+  const { data, error } = await sb.from('reservas').select('id,status,pago,pacote_id,sessoes(data,hora,chegada)').eq('aluno_id', S.user.id).order('criado_em', { ascending: false }).limit(40);
+  if (S.view !== 'reservas') return;
+  if (error) toast(erro(error), true);
+  const hoje = nowSP();
+  const lista = (data || []).filter(r => r.sessoes).sort((a, b) => (b.sessoes.data + b.sessoes.hora).localeCompare(a.sessoes.data + a.sessoes.hora));
+  const rot = { confirmada: 'Confirmada', espera: 'Lista de espera', cancelada: 'Cancelada', falta: 'Falta', realizada: 'Realizada' };
+  const cards = lista.map(r => {
+    const d = parseD(r.sessoes.data); const prazo = new Date(d); prazo.setDate(prazo.getDate() - 1); prazo.setHours(20, 0, 0, 0);
+    const pode = ['confirmada', 'espera'].includes(r.status) && hoje < prazo;
+    return `<div class="res"><div class="top"><div><small>${esc(fmtShort(r.sessoes.data))}</small><div class="h">${hhmm(r.sessoes.hora)}</div><small style="text-transform:none;color:#6B7360">Chegada ${hhmm(r.sessoes.chegada)}${r.status === 'confirmada' && !r.pacote_id ? ' · avulsa' : ''}</small></div><span class="st ${r.status}">${rot[r.status]}</span></div>
+      ${pode ? `<button class="btn ghost sm" style="width:100%;margin-top:10px" data-act="cancelar" data-id="${r.id}">Cancelar reserva</button>` : ''}</div>`;
+  }).join('') || `<div class="empty">Você ainda não fez nenhuma reserva.</div>`;
+  app.innerHTML = `<div class="phone"><div class="mini"><img src="./logo.png" alt=""><div class="t"><b style="font-size:30px">Minhas reservas</b></div></div>${cards}
+    <div class="note" style="margin-top:12px">O cancelamento devolve a remada ao saldo até as <b>20:00 do dia anterior</b>. Depois desse horário, fale com o Jhon.</div></div>${nav()}`;
+}
+
+/* ===== Painel do Jhon ===== */
+const ABAS = [['pendencias', 'Pendências'], ['alunos', 'Alunos'], ['sessoes', 'Sessões'], ['pacotes', 'Pacotes']];
+async function vPainel() {
+  const aba = S.view.split('-')[1] || 'pendencias'; S.aba = aba;
+  const app = $('#app');
+  const side = (n) => `<aside class="side"><div class="logo"><img src="./logo.png" alt=""><b>Honu Kai Va'a</b></div>
+    ${ABAS.map(([k, t]) => `<button class="${aba === k ? 'on' : ''}" data-go="painel-${k}">${t}${k === 'pendencias' && n ? `<span class="n">${n}</span>` : ''}</button>`).join('')}
+    <div class="sp"></div><button data-go="aulas">Ver como aluno</button><button data-act="sair">Sair</button></aside>`;
+  app.innerHTML = `<div class="adm">${side(S.cache.npend || 0)}<div class="main"><div class="center" style="min-height:50vh"><div class="spin"></div></div></div></div>`;
+  let corpo = '', head = '';
+  try {
+    if (aba === 'pendencias') [head, corpo] = await pPend();
+    else if (aba === 'alunos') [head, corpo] = await pAlunos();
+    else if (aba === 'sessoes') [head, corpo] = await pSessoes();
+    else [head, corpo] = await pPacotes();
+  } catch (e) { corpo = `<div class="msg err">${esc(erro(e))}</div>`; head = ''; }
+  if (S.view !== 'painel-' + aba && !(aba === 'pendencias' && S.view === 'painel')) return;
+  app.innerHTML = `<div class="adm">${side(S.cache.npend || 0)}<div class="main">${head}${corpo}</div></div>`;
+}
+const tit = (t, kp = '') => `<div class="head"><div><div style="font-weight:700;font-size:14px;text-transform:capitalize">${esc(fmtLong(ymd(nowSP())))}</div><h1 class="disp" style="font-size:38px">${t}</h1></div><div class="kpis">${kp}</div></div>`;
+const kpi = (n, t) => `<div class="kpi"><b>${n}</b><small>${t}</small></div>`;
+
+async function pPend() {
+  const { data, error } = await sb.from('pendencias').select('*,perfis(nome,telefone)').neq('status', 'resolvida').order('criado_em');
+  if (error) throw error;
+  const cat = S.cache.cat || 'todas';
+  const todas = data || []; S.cache.npend = todas.length;
+  const lista = todas.filter(p => cat === 'todas' || p.categoria === cat);
+  const pills = ['todas', 'financeiro', 'marketing', 'suporte', 'reservas'].map(c => `<button class="${cat === c ? 'on' : ''}" data-act="cat" data-c="${c}">${c[0].toUpperCase() + c.slice(1)}</button>`).join('');
+  const quando = t => { const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.round(m / 60)} h` : `há ${Math.round(m / 1440)} d`; };
+  const linhas = lista.map(p => `<tr><td><b>${p.id}</b></td><td><span class="cat ${p.categoria}">${p.categoria[0].toUpperCase() + p.categoria.slice(1)}</span></td>
+    <td><b>${esc(p.perfis ? p.perfis.nome : '—')}</b></td><td>${esc(p.assunto)}${p.status === 'em_andamento' ? ' <span class="cat">em andamento</span>' : ''}</td><td style="color:#6B7360;font-weight:600">${quando(p.criado_em)}</td>
+    <td><button class="mb g" data-act="pend" data-id="${p.id}" data-s="resolvida">Resolver</button>${p.status !== 'em_andamento' ? `<button class="mb" data-act="pend" data-id="${p.id}" data-s="em_andamento">Assumir</button>` : ''}<button class="mb o" data-act="pend" data-id="${p.id}" data-s="adiada">Depois</button></td></tr>`).join('');
+  const { count: nAl } = await sb.from('perfis').select('id', { count: 'exact', head: true });
+  const { count: nRes } = await sb.from('reservas').select('id,sessoes!inner(data)', { count: 'exact', head: true }).eq('status', 'confirmada').eq('sessoes.data', amanhaSP());
+  return [tit('Painel do Jhon', kpi(nRes ?? 0, 'reservas amanhã') + kpi(nAl ?? 0, 'alunos') + kpi(todas.length, 'pendências')),
+    `<div class="pills">${pills}</div><div class="tbl"><table><thead><tr><th>#</th><th>Categoria</th><th>Aluno</th><th>Assunto</th><th>Aberta</th><th>Ações</th></tr></thead><tbody>${linhas || `<tr><td colspan="6" style="text-align:center;padding:30px;color:#6B7360;font-weight:700">Nenhuma pendência em aberto.</td></tr>`}</tbody></table></div>`];
+}
+async function saldos() {
+  const [{ data: pac }, { data: res }] = await Promise.all([
+    sb.from('pacotes').select('id,aluno_id,total,validade,valor_pago,criado_em,pago').order('criado_em', { ascending: false }),
+    sb.from('reservas').select('pacote_id,status').not('pacote_id', 'is', null).in('status', ['confirmada', 'falta', 'realizada'])
+  ]);
+  const usado = {}; (res || []).forEach(r => usado[r.pacote_id] = (usado[r.pacote_id] || 0) + 1);
+  const hoje = ymd(nowSP()), porAluno = {};
+  (pac || []).forEach(p => { p.usadas = usado[p.id] || 0; p.saldo = p.total - p.usadas; if (p.pago && p.validade >= hoje && p.saldo > 0) { const a = porAluno[p.aluno_id] = porAluno[p.aluno_id] || { saldo: 0, validade: null }; a.saldo += p.saldo; if (!a.validade || p.validade < a.validade) a.validade = p.validade; } });
+  return { pac: pac || [], porAluno };
+}
+async function pAlunos() {
+  const { data, error } = await sb.from('perfis').select('id,nome,telefone,email,tipo,papel,criado_em').order('nome', { ascending: true, nullsFirst: false });
+  if (error) throw error;
+  const { porAluno } = await saldos();
+  const busca = (S.cache.busca || '').toLowerCase();
+  const lista = (data || []).filter(a => !busca || (a.nome || '').toLowerCase().includes(busca) || (a.telefone || '').includes(busca) || (a.email || '').toLowerCase().includes(busca));
+  const linhas = lista.map(a => { const s = porAluno[a.id] || { saldo: 0, validade: null };
+    return `<tr><td><b>${esc(a.nome || '(cadastro incompleto)')}</b><br><small style="color:#6B7360">${esc(a.email)}</small></td><td>${esc(a.telefone || '–')}</td><td><span class="cat">${esc(a.tipo)}</span></td><td><b>${s.saldo}</b></td><td>${fmtBR(s.validade)}</td><td><button class="mb g" data-act="lancar" data-id="${a.id}" data-n="${esc(a.nome || a.email)}">Lançar pacote</button></td></tr>`; }).join('');
+  return [tit('Alunos', kpi(lista.length, 'cadastrados')), `<div class="pills"><input class="in" id="busca" placeholder="Buscar por nome, telefone ou e-mail" value="${esc(S.cache.busca || '')}" style="max-width:380px;height:42px"></div>
+    <div class="tbl"><table><thead><tr><th>Aluno</th><th>Telefone</th><th>Tipo</th><th>Saldo</th><th>Validade</th><th>Ações</th></tr></thead><tbody>${linhas || `<tr><td colspan="6" style="text-align:center;padding:30px;color:#6B7360;font-weight:700">Nenhum aluno encontrado.</td></tr>`}</tbody></table></div>`];
+}
+async function pSessoes() {
+  const dia = S.cache.dia || amanhaSP();
+  const { data, error } = await sb.from('sessoes').select('id,data,hora,chegada,cota_app,cota_plataformas,status,reservas(id,status,pago,pacote_id,perfis(nome,telefone))').eq('data', dia).order('hora');
+  if (error) throw error;
+  const rot = { confirmada: 'Confirmada', espera: 'Espera', cancelada: 'Cancelada', falta: 'Falta', realizada: 'Presente' };
+  const cards = (data || []).map(s => {
+    const conf = s.reservas.filter(r => r.status === 'confirmada' || r.status === 'falta' || r.status === 'realizada'), esp = s.reservas.filter(r => r.status === 'espera');
+    const pl = (r) => `<div class="pl"><div><b>${esc(r.perfis ? r.perfis.nome : '—')}</b><br><small>${esc(r.perfis ? r.perfis.telefone : '')} ${r.pacote_id ? '· pacote' : '· avulsa' + (r.pago ? ' (paga)' : '')}</small></div><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="st ${r.status}">${rot[r.status]}</span>
+      ${['confirmada', 'espera'].includes(r.status) ? `<button class="mb r" data-act="admcancel" data-id="${r.id}">Cancelar</button>` : ''}${r.status === 'confirmada' ? `<button class="mb o" data-act="rstat" data-id="${r.id}" data-s="falta">Falta</button><button class="mb g" data-act="rstat" data-id="${r.id}" data-s="realizada">Presente</button>` : ''}</div></div>`;
+    return `<div class="scard"><div class="t"><b>${hhmm(s.hora)}</b><span style="font-weight:800">${conf.length}/${s.cota_app} no app · +${s.cota_plataformas} plataformas</span></div>
+      ${conf.map(pl).join('') || '<div class="pl"><small>Nenhuma reserva confirmada.</small></div>'}${esp.length ? `<div style="font-weight:800;margin-top:10px;font-size:13px">Lista de espera</div>${esp.map(pl).join('')}` : ''}</div>`;
+  }).join('') || `<div class="empty">Sem remadas neste dia.</div>`;
+  return [tit('Sessões', `<div class="kpi" style="padding:6px 12px"><input type="date" id="dia" class="in" value="${dia}" style="height:38px;width:170px"></div>`), `<div class="sgrid">${cards}</div>`];
+}
+async function pPacotes() {
+  const { data: al } = await sb.from('perfis').select('id,nome,email').not('nome', 'is', null).order('nome');
+  const { pac } = await saldos();
+  const nomes = Object.fromEntries((al || []).map(a => [a.id, a.nome]));
+  const opts = (al || []).map(a => `<option value="${a.id}">${esc(a.nome)} · ${esc(a.email)}</option>`).join('');
+  const preco = n => S.cfg['pacote_' + n + '_valor'] || '';
+  const linhas = pac.slice(0, 60).map(p => `<tr><td><b>${esc(nomes[p.aluno_id] || '—')}</b></td><td>${p.total} remadas</td><td>${p.usadas} usadas · <b>${p.saldo}</b> restam</td><td>${fmtBR(p.validade)}</td><td>${p.valor_pago != null ? 'R$ ' + Number(p.valor_pago).toFixed(2).replace('.', ',') : '–'}</td></tr>`).join('');
+  return [tit('Pacotes'), `<div class="tbl" style="margin-bottom:16px;padding:18px"><div class="formline"><div><label class="f" style="color:#0A0A0A;margin-top:0">Aluno</label><select class="in" id="pAluno">${opts}</select></div>
+    <div><label class="f" style="color:#0A0A0A;margin-top:0">Pacote</label><select class="in" id="pTam">${[4, 8, 12, 16].map(n => `<option value="${n}">${n} aulas · R$ ${preco(n)}</option>`).join('')}</select></div>
+    <div style="flex:none;min-width:0"><button class="btn g" style="margin:0;width:auto;padding:0 24px" data-act="lancarform">Lançar pacote</button></div></div>
+    <p class="hint">A validade é de ${esc(S.cfg.validade_pacote_meses || '1')} mês a partir de hoje. As remadas não acumulam.</p></div>
+    <div class="tbl"><table><thead><tr><th>Aluno</th><th>Pacote</th><th>Uso</th><th>Validade</th><th>Valor</th></tr></thead><tbody>${linhas || `<tr><td colspan="5" style="text-align:center;padding:30px;color:#6B7360;font-weight:700">Nenhum pacote lançado ainda.</td></tr>`}</tbody></table></div>`];
+}
+async function lancar(id, total) {
+  const valor = Number(S.cfg['pacote_' + total + '_valor']) || null;
+  const { error } = await sb.rpc('admin_lancar_pacote', { p_aluno: id, p_total: Number(total), p_valor: valor });
+  if (error) return toast(erro(error), true);
+  toast('Pacote de ' + total + ' remadas lançado.'); fechar(); render();
+}
+
+/* ===== Ações ===== */
+const A = {
+  sair: async () => { await sb.auth.signOut(); },
+  esqueci: async () => {
+    const em = ($('#email') || {}).value || '';
+    if (!/^\S+@\S+\.\S+$/.test(em)) return msgBox('Digite seu e-mail no campo acima e toque de novo em "Esqueci minha senha".', true);
+    const { error } = await sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname });
+    msgBox(error ? erro(error) : 'Se esse e-mail tiver conta, enviamos um link para criar uma nova senha.', !!error);
+  },
+  reservar: b => abrirReservar(b.dataset.id),
+  confirmar: async b => {
+    b.disabled = true; b.textContent = 'Reservando…';
+    const { data, error } = await sb.rpc('reservar', { p_sessao: b.dataset.id });
+    fechar();
+    if (error) { toast(erro(error), true); return render(); }
+    toast(data.status === 'espera' ? 'Você entrou na lista de espera.' : 'Reserva confirmada!'); render();
+  },
+  cancelar: b => sheet(`<h3>Cancelar reserva?</h3><p style="margin:0 0 4px;font-size:15px">Se a reserva usa pacote, a remada volta para o seu saldo.</p>
+    <button class="btn" data-act="cancelarok" data-id="${b.dataset.id}">Sim, cancelar</button><button class="btn ghost" data-act="fechar">Manter reserva</button>`),
+  cancelarok: async b => {
+    b.disabled = true;
+    const { data, error } = await sb.rpc('cancelar', { p_reserva: b.dataset.id }); fechar();
+    if (error) return toast(erro(error), true);
+    toast(data.saldo_devolvido ? 'Reserva cancelada. A remada voltou ao seu saldo.' : 'Reserva cancelada.'); render();
+  },
+  fechar, fecharfundo: (b, e) => { if (e.target === b) fechar(); },
+  cat: b => { S.cache.cat = b.dataset.c; render(); },
+  pend: async b => {
+    const s = b.dataset.s, upd = { status: s };
+    if (s === 'resolvida') upd.resolvido_em = new Date().toISOString();
+    if (s === 'adiada') upd.proximo_lembrete = new Date(Date.now() + 2 * 3600e3).toISOString();
+    const { error } = await sb.from('pendencias').update(upd).eq('id', b.dataset.id);
+    if (error) return toast(erro(error), true); toast(s === 'resolvida' ? 'Pendência resolvida.' : s === 'adiada' ? 'Adiada por 2 horas.' : 'Pendência assumida.'); render();
+  },
+  lancar: b => sheet(`<h3>Lançar pacote</h3><p style="margin:0 0 4px;font-size:15px"><b>${esc(b.dataset.n)}</b></p>
+    <label class="f">Tamanho do pacote</label><select class="in" id="mTam">${[4, 8, 12, 16].map(n => `<option value="${n}">${n} aulas · R$ ${S.cfg['pacote_' + n + '_valor'] || ''}</option>`).join('')}</select>
+    <button class="btn g" data-act="lancarok" data-id="${b.dataset.id}">Confirmar lançamento</button><button class="btn ghost" data-act="fechar">Voltar</button>`),
+  lancarok: b => lancar(b.dataset.id, $('#mTam').value),
+  lancarform: () => lancar($('#pAluno').value, $('#pTam').value),
+  admcancel: async b => { const { error } = await sb.rpc('cancelar', { p_reserva: b.dataset.id }); if (error) return toast(erro(error), true); toast('Reserva cancelada.'); render(); },
+  rstat: async b => { const { error } = await sb.from('reservas').update({ status: b.dataset.s }).eq('id', b.dataset.id); if (error) return toast(erro(error), true); toast('Registrado.'); render(); }
+};
+function msgBox(t, bad) { const m = $('#fmsg'); if (m) m.innerHTML = `<div class="msg ${bad ? 'err' : 'ok'}" role="alert">${esc(t)}</div>`; }
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); fechar(); return go(g.dataset.go); }
+  const b = e.target.closest('[data-act]'); if (b && A[b.dataset.act]) { A[b.dataset.act](b, e); }
+});
+document.addEventListener('change', e => { if (e.target.id === 'dia') { S.cache.dia = e.target.value; render(); } });
+let tb; document.addEventListener('input', e => { if (e.target.id === 'busca') { clearTimeout(tb); tb = setTimeout(() => { S.cache.busca = e.target.value; const pos = e.target.selectionStart; render(); setTimeout(() => { const i = $('#busca'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }, 400); }, 350); } });
+document.addEventListener('submit', async e => {
+  const f = e.target.closest('[data-form]'); if (!f) return; e.preventDefault();
+  const k = f.dataset.form, d = new FormData(f), btn = f.querySelector('button[type=submit]'); const txt = btn.textContent;
+  const off = (t) => { btn.disabled = !!t; btn.textContent = t || txt; };
+  try {
+    if (k === 'login') {
+      const em = (d.get('email') || '').trim(), pw = d.get('senha') || '';
+      if (!/^\S+@\S+\.\S+$/.test(em) || !pw) return msgBox('Informe e-mail e senha.', true);
+      off('Entrando…'); const { error } = await sb.auth.signInWithPassword({ email: em, password: pw }); if (error) throw error;
+    } else if (k === 'signup') {
+      const em = (d.get('email') || '').trim(), pw = d.get('senha') || '';
+      if (!/^\S+@\S+\.\S+$/.test(em)) return msgBox('Informe um e-mail válido.', true);
+      if (pw.length < 8) return msgBox('A senha precisa ter pelo menos 8 caracteres.', true);
+      off('Criando conta…'); const { data, error } = await sb.auth.signUp({ email: em, password: pw, options: { emailRedirectTo: location.origin + location.pathname } }); if (error) throw error;
+      if (!data.session) { off(); f.innerHTML = `<h2 style="margin-top:16px">Confira seu e-mail</h2><p class="lead">Enviamos um link de confirmação para <b>${esc(em)}</b>. Abra o e-mail, confirme e volte aqui para entrar.</p><button class="btn" type="button" data-go="entrar">Ir para Entrar</button>`; }
+    } else if (k === 'cadastro') {
+      if (!d.get('priv')) return msgBox('É preciso concordar com o aviso de privacidade.', true);
+      off('Salvando…'); const { error } = await sb.rpc('completar_cadastro', { p_nome: d.get('nome'), p_telefone: d.get('tel'), p_quer_marketing: !!d.get('mkt') }); if (error) throw error;
+      await carregar();
+    } else if (k === 'novasenha') {
+      const pw = d.get('senha') || ''; if (pw.length < 8) return msgBox('A senha precisa ter pelo menos 8 caracteres.', true);
+      off('Salvando…'); const { error } = await sb.auth.updateUser({ password: pw }); if (error) throw error;
+      S.recovery = false; toast('Senha atualizada.'); await carregar();
+    }
+  } catch (err) { msgBox(erro(err), true); off(); }
+});
+boot();
+</script>
+</body>
+</html>
