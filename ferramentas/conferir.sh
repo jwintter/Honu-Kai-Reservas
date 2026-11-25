@@ -7,7 +7,7 @@ rm -rf /tmp/serve && mkdir -p "/tmp/serve/$base" && cp -r out/. "/tmp/serve/$bas
 sleep 2
 conferir() {
   html=$(google-chrome --headless=new --disable-gpu --no-sandbox --virtual-time-budget=15000 --dump-dom "http://localhost:8080/$base/$1" 2>/dev/null)
-  if grep -qF "$2" <<<"$html"; then echo "OK    /$1 mostra: $2"; else echo "FALHA /$1 não mostra: $2"; exit 1; fi
+  if grep -qF "$2" <<<"$html"; then echo "OK    /$1 mostra: $2"; else echo "FALHA /$1 não mostra: $2"; echo "DBG $(sed -e 's/<script[^>]*>[^<]*<\/script>//g' -e 's/<[^>]*>/ /g' <<<"$html" | tr -s ' \n' ' ' | head -c 900)"; echo "DBG tamanho=${#html}"; grep -E '"GET' /tmp/serve.log | tail -12 | sed 's/^/DBG /'; exit 1; fi
 }
 conferir ""          "Sua próxima remada"
 conferir ""          "Entrar para reservar"
