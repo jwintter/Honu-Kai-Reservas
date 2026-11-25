@@ -154,6 +154,17 @@ input.in:focus,select.in:focus{border-color:#0A0A0A;outline:none;box-shadow:0 0 
 .pl small{color:#6B7360;font-weight:700}
 .formline{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}.formline>div{flex:1;min-width:180px}
 @media (max-width:820px){.adm{flex-direction:column}.side{width:auto;height:auto;position:static;flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:2px solid var(--g)}.side .logo{width:100%;margin:0}.side .sp{display:none}.main{padding:18px 14px 50px}}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.wc{display:flex;flex-direction:column;gap:4px;min-width:0}
+.wh{background:rgba(255,255,255,.1);border-radius:10px;padding:5px 0;text-align:center;color:#fff}
+.wh small{display:block;font:700 9px var(--body);letter-spacing:.06em;color:#cfd6c2}
+.wh b{font:400 18px/1 var(--disp)}
+.wc.hoje .wh{background:var(--g);color:#0A0A0A}.wc.hoje .wh small{color:#0A0A0A}
+.wp{border:0;border-radius:9px;padding:6px 0;background:rgba(255,255,255,.14);color:#fff;text-align:center;cursor:pointer;font-family:var(--body)}
+.wp b{display:block;font-size:11px;font-weight:800}.wp small{display:block;font-size:8.5px;color:#cfd6c2}
+.wp.on{background:var(--g);color:#0A0A0A}.wp.on small{color:#2b3a14}
+.wp.full{background:#2a2a2a}.wp.mine{background:#fff;color:#0A0A0A;outline:2px solid var(--g)}.wp.off{opacity:.4}
+.wz{font-size:9px;color:#cfd6c2;text-align:center;padding:6px 0}
 </style>
 </head>
 <body>
@@ -331,7 +342,7 @@ function vCadastro() {
 async function vAulas() {
   const app = $('#app');
   app.innerHTML = `<div class="phone">${topo()}<div class="center" style="min-height:40vh"><div class="spin"></div></div></div>${nav()}`;
-  const [{ data: ss, error }, { data: jan }, { data: sal }] = await Promise.all([sb.rpc('listar_sessoes'), sb.rpc('janela_reservas'), sb.rpc('meu_saldo')]);
+  const [{ data: ss, error }, { data: jan }, { data: sal }, { data: sem }] = await Promise.all([sb.rpc('listar_sessoes'), sb.rpc('janela_reservas'), sb.rpc('meu_saldo'), sb.rpc('listar_semana')]);
   if (S.view !== 'aulas') return;
   if (error) { toast(erro(error), true); }
   const saldo = sal && sal[0] ? sal[0] : { saldo: 0, validade: null };
@@ -363,12 +374,30 @@ async function vAulas() {
     <h1 class="disp">Remadas de amanhã</h1><p class="sub">${esc(fmtLong(dia))}</p>
     <div class="note">${aviso}</div>
     <div class="sessions">${cards}</div>
-    <details class="glass grade"><summary>Grade de horários</summary>
-      <div class="gr"><div><b>Terça a sexta</b><small style="color:#cfd6c2">Aulas matinais</small></div><div class="times"><span>04:40</span><span>06:10</span></div></div>
-      <div class="gr"><div><b>Sábado, domingo e feriados</b><small style="color:#cfd6c2">Quatro turmas</small></div><div class="times"><span>04:40</span><span>06:10</span><span>07:20</span><span>08:30</span></div></div>
-      <div class="gr"><div><b>Segunda-feira</b></div><div style="text-align:right;color:#cfd6c2">Sem aula, exceto feriados</div></div>
+    ${semanaHTML(sem || [])}
+    <details class="glass grade"><summary>Ponto de encontro</summary>
       <div class="gr"><div><b>Ponto de encontro</b>${esc(S.cfg.endereco || '')}<br><small style="color:#cfd6c2">${esc(S.cfg.referencia || '')}</small></div>${S.cfg.link_mapa ? `<a class="chip" href="${esc(S.cfg.link_mapa)}" target="_blank" rel="noopener">Ver no mapa</a>` : ''}</div>
     </details></div>${nav()}`;
+}
+
+function semanaHTML(sem) {
+  if (!sem.length) return '';
+  const nomes = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'];
+  const dias = {}; sem.forEach(x => (dias[x.data] = dias[x.data] || []).push(x));
+  const seg = parseD(sem[0].data); seg.setDate(seg.getDate() - ((seg.getDay() + 6) % 7));
+  const amanha = amanhaSP();
+  const cols = nomes.map((n, i) => {
+    const d = new Date(seg); d.setDate(seg.getDate() + i);
+    const iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const lista = dias[iso] || [];
+    const pills = lista.length ? lista.map(x => {
+      const cls = x.minha_status ? 'mine' : x.fechada ? 'off' : x.lotado ? 'full' : '';
+      const sub = x.minha_status ? 'sua' : x.fechada ? '—' : x.lotado ? 'lotado' : x.vagas + (x.vagas === 1 ? ' vaga' : ' vagas');
+      return `<button class="wp ${cls} ${x.reservavel ? 'on' : ''}" data-act="${x.reservavel && !x.minha_status && !x.fechada ? 'reservar' : 'semanainfo'}" data-id="${x.id}"><b>${hhmm(x.hora)}</b><small>${sub}</small></button>`;
+    }).join('') : `<span class="wz">${i === 0 ? 'Sem aula' : '—'}</span>`;
+    return `<div class="wc ${iso === amanha ? 'hoje' : ''}"><div class="wh"><small>${n}</small><b>${String(d.getDate()).padStart(2, '0')}</b></div>${pills}</div>`;
+  }).join('');
+  return `<h2 class="disp" style="margin:22px 0 8px;font-size:26px">Semana</h2><div class="wk">${cols}</div><p class="hint" style="margin:8px 2px 0">Só as remadas de amanhã (destaque verde) estão abertas para reserva. As demais aparecem para você se programar.</p>`;
 }
 function abrirReservar(id) {
   const s = (S.cache.sessoes || []).find(x => x.id === id); if (!s) return;
@@ -520,6 +549,7 @@ const A = {
     msgBox(error ? erro(error) : 'Se esse e-mail tiver conta, enviamos um link para criar uma nova senha.', !!error);
   },
   reservar: b => abrirReservar(b.dataset.id),
+  semanainfo: () => toast('As reservas abrem na véspera da remada. Hoje só as remadas de amanhã estão abertas.'),
   confirmar: async b => {
     b.disabled = true; b.textContent = 'Reservando…';
     const { data, error } = await sb.rpc('reservar', { p_sessao: b.dataset.id });
