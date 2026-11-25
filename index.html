@@ -346,7 +346,7 @@ async function vAulas() {
   if (S.view !== 'aulas') return;
   if (error) { toast(erro(error), true); }
   const saldo = sal && sal[0] ? sal[0] : { saldo: 0, validade: null };
-  S.cache.janela = jan; S.cache.saldo = saldo; S.cache.sessoes = ss || [];
+  S.cache.janela = jan; S.cache.saldo = saldo; S.cache.sessoes = (sem || []).filter(x => x.reservavel);
   const aberta = jan && jan.aberta;
   const chip = saldo.saldo > 0 ? `${saldo.saldo} ${saldo.saldo === 1 ? 'remada' : 'remadas'}<br><small style="font-weight:600;font-size:11px">até ${fmtBR(saldo.validade).slice(0, 5)}</small>` : 'Sem pacote';
   const dia = jan ? jan.data : amanhaSP();
@@ -356,24 +356,10 @@ async function vAulas() {
     else if (nowSP().getHours() * 60 + nowSP().getMinutes() >= (+jan.fecha.slice(0, 2)) * 60 + (+jan.fecha.slice(3))) aviso = `As reservas de amanhã <b>já fecharam</b> (${jan.fecha}). Elas reabrem amanhã às <b>${jan.tem_pacote ? jan.abre_pacote : jan.abre_geral}</b>.`;
     else aviso = `As reservas abrem às <b>${jan.abre_para_mim}</b> para o seu perfil. Pacotes: ${jan.abre_pacote} · demais alunos: ${jan.abre_geral} · fecham ${jan.fecha}.`;
   }
-  const cards = (ss || []).map(s => {
-    const ocup = s.cota - s.vagas;
-    const dots = Array.from({ length: s.cota }, (_, i) => `<i class="${i < ocup ? 'x' : ''}"></i>`).join('');
-    const minha = s.minha_status;
-    const tag = minha === 'confirmada' ? `<span class="vag mine">Sua vaga está garantida</span>` : minha === 'pagamento_pendente' ? `<span class="vag mine">Vaga guardada · falta o Pix</span>` : minha === 'espera' ? `<span class="vag mine">Você está na lista de espera</span>` : s.lotado ? `<span class="vag full">Lotado</span>` : `<span class="vag">${s.vagas} ${s.vagas === 1 ? 'vaga' : 'vagas'}</span>`;
-    let acao;
-    if (minha) acao = `<button class="btn ghost" data-go="reservas">Ver minha reserva</button>`;
-    else if (!aberta) acao = `<button class="btn" disabled>${jan ? 'Abre às ' + jan.abre_para_mim : 'Indisponível'}</button>`;
-    else if (s.lotado) acao = `<button class="btn ghost" data-act="reservar" data-id="${s.id}">Entrar na lista de espera</button>`;
-    else acao = `<button class="btn g" data-act="reservar" data-id="${s.id}">Reservar</button>`;
-    return `<article class="sess ${s.lotado ? 'full' : ''}"><div class="hora">${hhmm(s.hora)}<small>Chegada ${hhmm(s.chegada)}</small></div>
-      <div class="meta"><div class="dots" aria-label="${ocup} de ${s.cota} vagas ocupadas">${dots}</div>${tag}</div><div class="act">${acao}</div></article>`;
-  }).join('') || `<div class="empty">Não há remadas programadas para amanhã.<br>Segunda-feira não tem aula, exceto em feriados.</div>`;
   app.innerHTML = `<div class="phone">
     <div class="mini"><img src="./logo.png" alt=""><div class="t"><small>Aloha,</small><b>${esc(primeiro(S.perfil.nome))}</b></div><span class="chip ${saldo.saldo > 0 ? '' : 'out'}" style="text-align:center">${chip}</span></div>
-    <h1 class="disp">Remadas de amanhã</h1><p class="sub">${esc(fmtLong(dia))}</p>
+    <h1 class="disp">Aulas</h1>
     <div class="note">${aviso}</div>
-    <div class="sessions">${cards}</div>
     ${semanaHTML(sem || [])}
     <details class="glass grade"><summary>Ponto de encontro</summary>
       <div class="gr"><div><b>Ponto de encontro</b>${esc(S.cfg.endereco || '')}<br><small style="color:#cfd6c2">${esc(S.cfg.referencia || '')}</small></div>${S.cfg.link_mapa ? `<a class="chip" href="${esc(S.cfg.link_mapa)}" target="_blank" rel="noopener">Ver no mapa</a>` : ''}</div>
@@ -394,10 +380,10 @@ function semanaHTML(sem) {
       const cls = x.minha_status ? 'mine' : x.fechada ? 'off' : x.lotado ? 'full' : '';
       const sub = x.minha_status ? 'sua' : x.fechada ? '—' : x.lotado ? 'lotado' : x.vagas + (x.vagas === 1 ? ' vaga' : ' vagas');
       return `<button class="wp ${cls} ${x.reservavel ? 'on' : ''}" data-act="${x.reservavel && !x.minha_status && !x.fechada ? 'reservar' : 'semanainfo'}" data-id="${x.id}"><b>${hhmm(x.hora)}</b><small>${sub}</small></button>`;
-    }).join('') : `<span class="wz">${i === 0 ? 'Sem aula' : '—'}</span>`;
+    }).join('') : `<span class="wz">${i === 0 ? 'Fechado' : '—'}</span>`;
     return `<div class="wc ${iso === amanha ? 'hoje' : ''}"><div class="wh"><small>${n}</small><b>${String(d.getDate()).padStart(2, '0')}</b></div>${pills}</div>`;
   }).join('');
-  return `<h2 class="disp" style="margin:22px 0 8px;font-size:26px">Semana</h2><div class="wk">${cols}</div><p class="hint" style="margin:8px 2px 0">Só as remadas de amanhã (destaque verde) estão abertas para reserva. As demais aparecem para você se programar.</p>`;
+  return `<div class="wk">${cols}</div><p class="hint" style="margin:8px 2px 0">Toque em um horário do dia em verde (amanhã) para reservar. Os outros dias aparecem para você se programar.</p>`;
 }
 function abrirReservar(id) {
   const s = (S.cache.sessoes || []).find(x => x.id === id); if (!s) return;
