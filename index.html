@@ -202,13 +202,13 @@ const ERR = {
   cadastro_incompleto: 'Complete seu cadastro antes de reservar.',
   sessao_indisponivel: 'Este horário não está disponível.',
   so_amanha: 'As reservas são sempre para o dia seguinte.',
-  reservas_encerradas: 'As reservas de amanhã já fecharam (20:00).',
+  reservas_encerradas: 'As reservas de amanhã já fecharam (23:30).',
   ainda_nao_abriu: 'As reservas ainda não abriram para o seu perfil.',
   ja_reservada: 'Você já tem reserva neste horário.',
   dependente_invalido: 'Dependente inválido.',
   reserva_nao_encontrada: 'Reserva não encontrada.',
   reserva_nao_cancelavel: 'Esta reserva não pode mais ser cancelada.',
-  fora_do_prazo: 'O prazo de cancelamento terminou às 20:00 de hoje. Fale com o Jhon.',
+  fora_do_prazo: 'O prazo de cancelamento terminou às 21:00 de hoje. Fale com o Jhon.',
   telefone_ja_cadastrado: 'Este telefone já está cadastrado em outra conta.',
   telefone_invalido: 'Informe o telefone com DDD, por exemplo (27) 99999-0000.',
   nome_invalido: 'Informe seu nome completo.',
@@ -353,7 +353,7 @@ async function vAulas() {
   const dia = jan ? jan.data : amanhaSP();
   let aviso = '';
   if (jan) {
-    if (aberta) aviso = `Reservas abertas até as <b>${jan.fecha}</b>. Cancelamento devolve a remada ao saldo até esse horário.`;
+    if (aberta) aviso = `Reservas abertas até as <b>${jan.fecha}</b>. Cancelamento devolve a remada ao saldo até as <b>${jan.cancela_ate || '21:00'}</b>.`;
     else if (nowSP().getHours() * 60 + nowSP().getMinutes() >= (+jan.fecha.slice(0, 2)) * 60 + (+jan.fecha.slice(3))) aviso = `As reservas de amanhã <b>já fecharam</b> (${jan.fecha}). Elas reabrem amanhã às <b>${jan.tem_pacote ? jan.abre_pacote : jan.abre_geral}</b>.`;
     else aviso = `As reservas abrem às <b>${jan.abre_para_mim}</b> para o seu perfil. Pacotes: ${jan.abre_pacote} · demais alunos: ${jan.abre_geral} · fecham ${jan.fecha}.`;
   }
@@ -390,7 +390,7 @@ function abrirReservar(id) {
   const pacote = jan.tem_pacote && sal.saldo > 0;
   const linhas = `<div class="row"><span>Data</span><b>${esc(fmtShort(s.data))}</b></div><div class="row"><span>Remada</span><b style="font:400 26px var(--disp)">${hhmm(s.hora)}</b></div><div class="row"><span>Chegada</span><b>${hhmm(s.chegada)}</b></div><div class="row"><span>Local</span><b>Praia do Canto</b></div>` +
     (s.lotado ? `<div class="row"><span>Situação</span><b>Lista de espera</b></div>` : pacote ? `<div class="row"><span>Saldo atual</span><b>${sal.saldo} remadas</b></div><div class="row"><span>Após reservar</span><b>${sal.saldo - 1} remadas</b></div><div class="row"><span>Validade do pacote</span><b>${fmtBR(sal.validade)}</b></div>` : `<div class="row"><span>Tipo</span><b>Remada avulsa</b></div><div class="row"><span>Valor</span><b>R$ ${esc(S.cfg.valor_remada_avulsa || '60')}</b></div>`);
-  const aviso = s.lotado ? 'Se alguém cancelar, sua vaga é confirmada automaticamente e você recebe o aviso.' : pacote ? `Você pode cancelar até as ${jan.fecha || '20:00'} de hoje e a remada volta para o seu saldo.` : `O pagamento da remada avulsa é feito por Pix até as ${jan.fecha || '20:00'}. O Jhon envia os dados no WhatsApp.`;
+  const aviso = s.lotado ? 'Se alguém cancelar, sua vaga é confirmada automaticamente e você recebe o aviso.' : pacote ? `Você pode cancelar até as ${jan.cancela_ate || '21:00'} de hoje e a remada volta para o seu saldo.` : `O pagamento da remada avulsa é feito por Pix até as ${jan.fecha || '23:30'}. O Jhon envia os dados no WhatsApp.`;
   sheet(`<h3>${s.lotado ? 'Lista de espera' : 'Confirmar reserva'}</h3>${linhas}<p class="hint" style="margin:10px 0 0">${aviso}</p>
     <button class="btn g" data-act="confirmar" data-id="${id}">${s.lotado ? 'Entrar na lista de espera' : 'Confirmar reserva'}</button><button class="btn ghost" data-act="fechar">Voltar</button>`);
 }
@@ -410,7 +410,7 @@ async function vReservas() {
   const lista = (data || []).filter(r => r.sessoes).sort((a, b) => (b.sessoes.data + b.sessoes.hora).localeCompare(a.sessoes.data + a.sessoes.hora));
   const rot = { confirmada: 'Confirmada', pagamento_pendente: 'Falta o Pix', espera: 'Lista de espera', cancelada: 'Cancelada', falta: 'Falta', realizada: 'Realizada' };
   const cards = lista.map(r => {
-    const d = parseD(r.sessoes.data); const prazo = new Date(d); prazo.setDate(prazo.getDate() - 1); prazo.setHours(20, 0, 0, 0);
+    const d = parseD(r.sessoes.data); const prazo = new Date(d); prazo.setDate(prazo.getDate() - 1); prazo.setHours(21, 0, 0, 0);
     const inicio = new Date(d); inicio.setHours(+r.sessoes.hora.slice(0, 2), +r.sessoes.hora.slice(3, 5), 0, 0);
     const ativa = ['confirmada', 'pagamento_pendente', 'espera'].includes(r.status);
     const noPrazo = hoje < prazo, pode = ativa && hoje < inicio;
@@ -419,7 +419,7 @@ async function vReservas() {
       ${pode ? `<button class="btn ghost sm" style="width:100%;margin-top:10px" data-act="cancelar" data-id="${r.id}" data-late="${noPrazo ? '' : '1'}">${noPrazo ? 'Cancelar reserva' : 'Liberar vaga'}</button>` : ''}</div>`;
   }).join('') || `<div class="empty">Você ainda não fez nenhuma reserva.</div>`;
   app.innerHTML = `<div class="phone"><div class="mini"><img src="./logo.png" alt=""><div class="t"><b style="font-size:30px">Minhas reservas</b></div></div>${cards}
-    <div class="note" style="margin-top:12px">O cancelamento devolve a remada ao saldo até as <b>20:00 do dia anterior</b>. Depois desse horário você ainda pode liberar a vaga para outra pessoa, mas a remada continua descontada.</div></div>${nav()}`;
+    <div class="note" style="margin-top:12px">O cancelamento devolve a remada ao saldo até as <b>21:00 do dia anterior</b>. Depois desse horário você ainda pode liberar a vaga para outra pessoa, mas a remada continua descontada.</div></div>${nav()}`;
 }
 
 /* ===== Painel do Jhon ===== */
