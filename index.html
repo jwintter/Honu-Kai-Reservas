@@ -315,7 +315,7 @@ function vAuth(v) {
     <div id="fmsg"></div>
     <button class="btn" type="submit">${entrar ? 'Entrar' : 'Continuar'}</button>
   </form></div>
-  <p style="text-align:center;font-size:12px;font-weight:600;margin-top:18px;color:#cfd6c2">${entrar ? 'Ao entrar você concorda com o aviso de privacidade do clube.' : 'Sua senha é guardada com criptografia. Nem o clube consegue vê-la.'}</p></div>`;
+  <p style="text-align:center;font-size:12px;font-weight:600;margin-top:18px;color:#cfd6c2">${entrar ? 'Ao entrar você concorda com o <a href="./privacidade.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">aviso de privacidade</a> do clube.' : 'Sua senha é guardada com criptografia. Nem o clube consegue vê-la.'}</p></div>`;
 }
 function vRecuperar() {
   return `<div class="phone">${marca()}<div class="card"><form data-form="novasenha" novalidate><h2>Nova senha</h2><p class="lead">Escolha uma nova senha para a sua conta.</p>
@@ -334,7 +334,7 @@ function vCadastro() {
   <label class="f" for="nome">Nome completo</label><input class="in" id="nome" name="nome" autocomplete="name" placeholder="Nome e sobrenome" required>
   <label class="f" for="tel">Telefone (WhatsApp)</label><input class="in" id="tel" name="tel" type="tel" autocomplete="tel" inputmode="tel" placeholder="(27) 99999-0000" required>
   <p class="hint">É com esse número que o clube reconhece você no WhatsApp.</p>
-  <label class="check"><input type="checkbox" name="priv" required><span>Li e concordo com o aviso de privacidade do clube.</span></label>
+  <label class="check"><input type="checkbox" name="priv" required><span>Li e concordo com o <a href="./privacidade.html" target="_blank" rel="noopener">aviso de privacidade</a> do clube.</span></label>
   <label class="check"><input type="checkbox" name="mkt"><span>Quero receber novidades e promoções do clube (opcional).</span></label>
   <div id="fmsg"></div><button class="btn" type="submit">Concluir cadastro</button></form></div></div>`;
 }
