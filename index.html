@@ -166,6 +166,21 @@ input.in:focus,select.in:focus{border-color:#0A0A0A;outline:none;box-shadow:0 0 
 .wp.on{background:var(--g);color:#0A0A0A}.wp.on small{color:#2b3a14}
 .wp.full{background:#2a2a2a}.wp.mine{background:#fff;color:#0A0A0A;outline:2px solid var(--g)}.wp.off{opacity:.4}
 .wz{font-size:9px;color:#cfd6c2;text-align:center;padding:6px 0}
+.atg{display:grid;grid-template-columns:320px 1fr;gap:14px;align-items:start}
+.cvl{background:rgba(255,255,255,.97);border-radius:22px;padding:8px;display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto;color:#0A0A0A}
+.cv{border:0;text-align:left;background:#F3F8EA;border-radius:14px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:4px;font-family:var(--body);color:#0A0A0A}
+.cv.on{background:var(--g)}
+.cv .r{display:flex;justify-content:space-between;gap:8px;align-items:center}.cv small{color:#4A5340;font-weight:700}
+.cv .pv{font-size:13px;color:#4A5340;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cv .nb{background:#0A0A0A;color:var(--g);border-radius:999px;padding:0 8px;font-size:12px;line-height:20px;font-weight:800}
+.th{background:rgba(255,255,255,.97);border-radius:22px;padding:12px;color:#0A0A0A;display:flex;flex-direction:column;gap:10px;min-height:50vh}
+.thh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}.thh small{color:#6B7360;font-weight:700}
+.msgs{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto;padding:4px}
+.bb{max-width:82%;padding:8px 12px;border-radius:14px;font-size:14px;word-break:break-word;white-space:pre-wrap}.bb small{display:block;font-size:11px;color:#4A5340;margin-top:3px;font-weight:700}
+.bb.in{background:#F1F1F1;align-self:flex-start}.bb.bot{background:#E9F2DC;align-self:flex-end}.bb.me{background:var(--g);align-self:flex-end}.bb.er{background:#FDE5E0;align-self:flex-end}
+.vb{display:none}
+.comp{display:flex;gap:8px;align-items:flex-end}.comp textarea{flex:1;min-height:46px;height:auto;resize:vertical;padding:10px 12px}
+@media (max-width:820px){.vb{display:inline-flex}.atg{grid-template-columns:1fr}.atg.sel .cvl{display:none}}
 </style>
 </head>
 <body>
@@ -423,17 +438,18 @@ async function vReservas() {
 }
 
 /* ===== Painel do Jhon ===== */
-const ABAS = [['pendencias', 'Pendências'], ['alunos', 'Alunos'], ['sessoes', 'Sessões'], ['pacotes', 'Pacotes']];
+const ABAS = [['pendencias', 'Pendências'], ['atendimento', 'Atendimento'], ['alunos', 'Alunos'], ['sessoes', 'Sessões'], ['pacotes', 'Pacotes']];
 async function vPainel() {
   const aba = S.view.split('-')[1] || 'pendencias'; S.aba = aba;
   const app = $('#app');
   const side = (n) => `<aside class="side"><div class="logo"><img src="./logo.png" alt=""><b>Honu Kai Va'a</b></div>
-    ${ABAS.map(([k, t]) => `<button class="${aba === k ? 'on' : ''}" data-go="painel-${k}">${t}${k === 'pendencias' && n ? `<span class="n">${n}</span>` : ''}</button>`).join('')}
+    ${ABAS.map(([k, t]) => `<button class="${aba === k ? 'on' : ''}" data-go="painel-${k}">${t}${k === 'pendencias' && n ? `<span class="n">${n}</span>` : ''}${k === 'atendimento' && S.cache.nconv ? `<span class="n">${S.cache.nconv}</span>` : ''}</button>`).join('')}
     <div class="sp"></div><button data-go="aulas">Ver como aluno</button><button data-act="sair">Sair</button></aside>`;
   app.innerHTML = `<div class="adm">${side(S.cache.npend || 0)}<div class="main"><div class="center" style="min-height:50vh"><div class="spin"></div></div></div></div>`;
   let corpo = '', head = '';
   try {
     if (aba === 'pendencias') [head, corpo] = await pPend();
+    else if (aba === 'atendimento') [head, corpo] = await pAtendimento();
     else if (aba === 'alunos') [head, corpo] = await pAlunos();
     else if (aba === 'sessoes') [head, corpo] = await pSessoes();
     else [head, corpo] = await pPacotes();
@@ -469,6 +485,41 @@ async function saldos() {
   const hoje = ymd(nowSP()), porAluno = {};
   (pac || []).forEach(p => { p.usadas = usado[p.id] || 0; p.saldo = p.total - p.usadas; if (p.pago && p.validade >= hoje && p.saldo > 0) { const a = porAluno[p.aluno_id] = porAluno[p.aluno_id] || { saldo: 0, validade: null }; a.saldo += p.saldo; if (!a.validade || p.validade < a.validade) a.validade = p.validade; } });
   return { pac: pac || [], porAluno };
+}
+
+/* ===== Atendimento (conversas do WhatsApp) ===== */
+const hhmmSP = t => new Date(t).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const fmtTel = t => { const d = String(t || '').replace(/\D/g, ''); const n = d.startsWith('55') ? d.slice(2) : d; return n.length === 11 ? `(${n.slice(0, 2)}) ${n.slice(2, 7)}-${n.slice(7)}` : n.length === 10 ? `(${n.slice(0, 2)}) ${n.slice(2, 6)}-${n.slice(6)}` : t; };
+async function pAtendimento() {
+  const { data: lista, error } = await sb.rpc('admin_conversas');
+  if (error) throw error;
+  const conv = lista || [];
+  S.cache.nconv = conv.reduce((a, c) => a + (c.nao_lidas > 0 ? 1 : 0), 0);
+  let sel = conv.find(c => c.chave === S.cache.conv) || null;
+  if (!sel && conv.length && window.innerWidth > 820) sel = conv[0];
+  S.cache.conv = sel ? sel.chave : null;
+  let msgs = [];
+  if (sel) { const r = await sb.rpc('admin_thread', { p_chave: sel.chave }); if (r.error) throw r.error; msgs = r.data || []; }
+  const itens = conv.map(c => `<button class="cv ${sel && c.chave === sel.chave ? 'on' : ''}" data-act="atsel" data-c="${esc(c.chave)}">
+      <div class="r"><b>${esc(c.nome || fmtTel(c.telefone))}</b><small>${hhmmSP(c.ultima_em)}</small></div>
+      <div class="r"><span class="pv">${esc(c.ultima_msg || '')}</span>${c.nao_lidas > 0 ? `<span class="nb">${c.nao_lidas}</span>` : ''}</div>
+      <div>${c.modo === 'humano' ? '<span class="cat suporte">Você atende</span>' : '<span class="cat">Bot</span>'}</div></button>`).join('')
+    || `<div class="empty" style="color:#0A0A0A">Nenhuma conversa ainda. Quando alguém escrever para o número do clube, aparece aqui.</div>`;
+  const bolhas = msgs.map(m => {
+    const eu = m.direcao === 'enviada', erro = m.direcao === 'falhou', humano = m.fluxo === 'humano';
+    return `<div class="bb ${erro ? 'er' : eu ? (humano ? 'me' : 'bot') : 'in'}"><div>${esc(m.mensagem)}</div><small>${erro ? 'Falha no envio · ' : humano ? 'Você · ' : eu ? 'Bot · ' : ''}${hhmmSP(m.criado_em)}</small></div>`;
+  }).join('');
+  const aberta = sel && sel.janela_aberta;
+  const painel = sel ? `<div class="th"><div class="thh"><div><b>${esc(sel.nome || fmtTel(sel.telefone))}</b><br><small>${esc(fmtTel(sel.telefone))}</small></div>
+      <div>${sel.modo === 'humano' ? `<button class="mb o" data-act="atmodo" data-c="${esc(sel.chave)}" data-h="0">Devolver ao bot</button>` : `<button class="mb g" data-act="atmodo" data-c="${esc(sel.chave)}" data-h="1">Assumir conversa</button>`}<button class="mb o" data-act="atref">Atualizar</button><button class="mb o vb" data-act="atvoltar">← Conversas</button></div></div>
+      <div class="msgs" id="msgs">${bolhas || '<div class="empty" style="color:#0A0A0A">Sem mensagens.</div>'}</div>
+      <div class="comp">${aberta ? `<textarea class="in" id="atmsg" rows="2" placeholder="Escreva a resposta como Honu Kai Va'a…">${esc(S.cache.draft || '')}</textarea><button class="mb g" style="height:46px" data-act="atenvia" data-c="${esc(sel.chave)}">Enviar</button>`
+        : `<div class="note" style="margin:0;flex:1;color:#0A0A0A;background:#FFF1C7">Passaram mais de 24 h desde a última mensagem dessa pessoa. O WhatsApp só permite enviar modelos aprovados fora desse prazo. Quando ela escrever de novo, o envio libera.</div>`}</div></div>`
+    : `<div class="th"><div class="empty" style="color:#0A0A0A;padding:40px 10px">Escolha uma conversa.</div></div>`;
+  clearTimeout(S.cache.atT);
+  S.cache.atT = setTimeout(() => { const ta = document.getElementById('atmsg'); if (S.view === 'painel-atendimento' && !(ta && ta.value.trim())) render(); }, 20000);
+  return [tit('Atendimento', kpi(S.cache.nconv, 'não lidas') + kpi(conv.filter(c => c.modo === 'humano').length, 'com você')),
+    `<div class="atg ${sel ? 'sel' : ''}"><div class="cvl">${itens}</div>${painel}</div>`];
 }
 async function pAlunos() {
   const { data, error } = await sb.from('alunos').select('id,nome,telefone,tipo,user_id,responsavel_id,criado_em').order('nome', { ascending: true });
@@ -578,6 +629,19 @@ const A = {
     toast('Reserva de plataforma lançada.'); fechar(); render();
   },
   pst: async b => { const { error } = await sb.from('reservas_plataforma').update({ status: b.dataset.s }).eq('id', b.dataset.id); if (error) return toast(erro(error), true); toast(b.dataset.s === 'falta' ? 'Falta registrada: check-in a repor em 7 dias.' : 'Registrado.'); render(); },
+  atsel: b => { S.cache.conv = b.dataset.c; S.cache.draft = ''; render(); },
+  atref: () => render(),
+  atvoltar: () => { S.cache.conv = null; render(); },
+  atmodo: async b => { const { error } = await sb.rpc('admin_modo', { p_chave: b.dataset.c, p_humano: b.dataset.h === '1' }); if (error) return toast(erro(error), true); toast(b.dataset.h === '1' ? 'Você assumiu: o bot não responde essa conversa.' : 'Conversa devolvida ao bot.'); render(); },
+  atenvia: async b => {
+    const ta = $('#atmsg'); const txt = (ta && ta.value || '').trim(); if (!txt) return toast('Escreva a mensagem.', true);
+    b.disabled = true; S.cache.draft = txt;
+    const { data, error } = await sb.rpc('admin_enviar', { p_chave: b.dataset.c, p_texto: txt });
+    b.disabled = false;
+    if (error) return toast(erro(error), true);
+    if (!data.ok) return toast(data.mensagem || 'Não foi possível enviar.', true);
+    S.cache.draft = ''; toast('Mensagem na fila. Sai em até 1 minuto.'); render();
+  },
   pix: async b => { const { data, error } = await sb.rpc('admin_marcar_pago', { p_reserva: b.dataset.id }); if (error) return toast(erro(error), true); if (!data.ok) return toast(data.mensagem, true); toast('Pix registrado. Reserva confirmada.'); render(); },
   aceitar: async b => { const { data, error } = await sb.rpc('admin_aceitar_espera', { p_reserva: b.dataset.id }); if (error) return toast(erro(error), true); if (!data.ok) return toast(data.mensagem, true); toast('Vaga concedida.'); render(); },
   rstat: async b => { const { error } = await sb.from('reservas').update({ status: b.dataset.s }).eq('id', b.dataset.id); if (error) return toast(erro(error), true); toast('Registrado.'); render(); }
