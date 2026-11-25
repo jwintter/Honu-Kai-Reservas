@@ -3,6 +3,8 @@ import './globals.css'
 export const metadata = {
   title: "Honu Kai Va'a | Canoa Havaiana em Vitória/ES",
   description: 'Base de canoa havaiana na Praia do Canto, Vitória/ES.',
+  // A versão de teste não deve aparecer em buscadores.
+  ...(process.env.NEXT_PUBLIC_BASE_PATH?.endsWith('/novo') ? { robots: { index: false, follow: false } } : {}),
 }
 
 export default function RootLayout({ children }) {

@@ -5,3 +5,4 @@ As regras de reserva e as permissões ficam no banco. Não coloque chaves secret
 
 - Rodar no computador: `INICIAR.bat` (Windows) ou `npm install` e `npm run dev`.
 - Compilação: o fluxo "Compilar site v2" do GitHub Actions gera a pasta `out/`.
+- `ferramentas/conferir.sh`: abre as páginas compiladas num navegador antes de publicar.
