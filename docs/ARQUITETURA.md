@@ -22,7 +22,7 @@ Jhon ─────► Painel (no próprio app) ─► Supabase
 | `segredos` | hash do token do bot (nunca o token) |
 
 ## Regras (funções `core_*`, não expostas)
-Reserva só para amanhã; abre 07:00 (pacote) / 09:00 (demais); fecha 23:30; cancelamento com devolução até 21:00; Pix da avulsa até 20:00 (23:30 se reservar depois das 20:00). Criança de 2 a 7 anos vai no banco do responsável. Segunda remada no mesmo dia é provisória e cede a vaga à lista de espera. Avulsa fica `pagamento_pendente` até o Pix. Cancelar até 20:00 do dia anterior devolve a remada; depois disso a vaga é liberada e a remada continua descontada. Quando abre vaga, o primeiro da espera é chamado (não promovido sozinho).
+Reserva só para amanhã; abre 07:00 (pacote) / 09:00 (demais); fecha 23:30; cancelamento com devolução até 21:00; Pix da avulsa até 20:00 (23:30 se reservar depois das 20:00): o prazo só controla os lembretes no WhatsApp; a vaga nunca é liberada por falta de Pix (o Jhon acompanha no Painel). Criança de 2 a 7 anos vai no banco do responsável. Segunda remada no mesmo dia é provisória e cede a vaga à lista de espera. Avulsa fica `pagamento_pendente` até o Pix. Cancelar até 20:00 do dia anterior devolve a remada; depois disso a vaga é liberada e a remada continua descontada. Quando abre vaga, o primeiro da espera é chamado (não promovido sozinho).
 
 ## Acesso
 - App/painel: funções `reservar`, `cancelar`, `listar_sessoes`, `meu_saldo`, `janela_reservas`, `completar_cadastro` e `admin_*`; todas conferem `auth.uid()`.
