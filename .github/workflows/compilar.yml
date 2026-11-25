@@ -1,0 +1,26 @@
+# Compila o site no GitHub. Não publica nada: o resultado fica como arquivo para download.
+name: Compilar site v2
+on:
+  push:
+    branches: [site-v2]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://fvzxqhoexkjqzgihwhnp.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_MlLTRFAonNd6zXDGolg5VA_tOucA8dl
+      NEXT_PUBLIC_BASE_PATH: /Honu-Kai-Reservas/novo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: out
