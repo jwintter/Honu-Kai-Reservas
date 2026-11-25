@@ -159,6 +159,7 @@ input.in:focus,select.in:focus{border-color:#0A0A0A;outline:none;box-shadow:0 0 
 .wh{background:rgba(255,255,255,.1);border-radius:10px;padding:5px 0;text-align:center;color:#fff}
 .wh small{display:block;font:700 9px var(--body);letter-spacing:.06em;color:#cfd6c2}
 .wh b{font:400 18px/1 var(--disp)}
+.wc.ontem{opacity:.45}
 .wc.hoje .wh{background:var(--g);color:#0A0A0A}.wc.hoje .wh small{color:#0A0A0A}
 .wp{border:0;border-radius:9px;padding:6px 0;background:rgba(255,255,255,.14);color:#fff;text-align:center;cursor:pointer;font-family:var(--body)}
 .wp b{display:block;font-size:11px;font-weight:800}.wp small{display:block;font-size:8.5px;color:#cfd6c2}
@@ -358,8 +359,7 @@ async function vAulas() {
   }
   app.innerHTML = `<div class="phone">
     <div class="mini"><img src="./logo.png" alt=""><div class="t"><small>Aloha,</small><b>${esc(primeiro(S.perfil.nome))}</b></div><span class="chip ${saldo.saldo > 0 ? '' : 'out'}" style="text-align:center">${chip}</span></div>
-    <h1 class="disp">Aulas</h1>
-    <div class="note">${aviso}</div>
+        <div class="note">${aviso}</div>
     ${semanaHTML(sem || [])}
     <details class="glass grade"><summary>Ponto de encontro</summary>
       <div class="gr"><div><b>Ponto de encontro</b>${esc(S.cfg.endereco || '')}<br><small style="color:#cfd6c2">${esc(S.cfg.referencia || '')}</small></div>${S.cfg.link_mapa ? `<a class="chip" href="${esc(S.cfg.link_mapa)}" target="_blank" rel="noopener">Ver no mapa</a>` : ''}</div>
@@ -367,23 +367,22 @@ async function vAulas() {
 }
 
 function semanaHTML(sem) {
-  if (!sem.length) return '';
-  const nomes = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'];
+  const nomes = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
   const dias = {}; sem.forEach(x => (dias[x.data] = dias[x.data] || []).push(x));
-  const seg = parseD(sem[0].data); seg.setDate(seg.getDate() - ((seg.getDay() + 6) % 7));
   const amanha = amanhaSP();
-  const cols = nomes.map((n, i) => {
-    const d = new Date(seg); d.setDate(seg.getDate() + i);
-    const iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const cols = Array.from({ length: 7 }, (_, i) => {
+    const d = nowSP(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - 1 + i);
+    const iso = ymd(d);
     const lista = dias[iso] || [];
     const pills = lista.length ? lista.map(x => {
       const cls = x.minha_status ? 'mine' : x.fechada ? 'off' : x.lotado ? 'full' : '';
       const sub = x.minha_status ? 'sua' : x.fechada ? '—' : x.lotado ? 'lotado' : x.vagas + (x.vagas === 1 ? ' vaga' : ' vagas');
-      return `<button class="wp ${cls} ${x.reservavel ? 'on' : ''}" data-act="${x.reservavel && !x.minha_status && !x.fechada ? 'reservar' : 'semanainfo'}" data-id="${x.id}"><b>${hhmm(x.hora)}</b><small>${sub}</small></button>`;
-    }).join('') : `<span class="wz">${i === 0 ? 'Fechado' : '—'}</span>`;
-    return `<div class="wc ${iso === amanha ? 'hoje' : ''}"><div class="wh"><small>${n}</small><b>${String(d.getDate()).padStart(2, '0')}</b></div>${pills}</div>`;
+      const ok = x.reservavel && !x.minha_status && !x.fechada;
+      return `<button class="wp ${cls} ${x.reservavel ? 'on' : ''}" data-act="${ok ? 'reservar' : 'semanainfo'}" data-id="${x.id}"><b>${hhmm(x.hora)}</b><small>${sub}</small></button>`;
+    }).join('') : `<span class="wz">Fechado</span>`;
+    return `<div class="wc ${iso === amanha ? 'hoje' : ''} ${i === 0 ? 'ontem' : ''}"><div class="wh"><small>${nomes[d.getDay()]}</small><b>${String(d.getDate()).padStart(2, '0')}</b></div>${pills}</div>`;
   }).join('');
-  return `<div class="wk">${cols}</div><p class="hint" style="margin:8px 2px 0">Toque em um horário do dia em verde (amanhã) para reservar. Os outros dias aparecem para você se programar.</p>`;
+  return `<div class="wk">${cols}</div><p class="hint" style="margin:10px 2px 0">Só o dia em verde está aberto para reserva. Os demais aparecem para você se programar.</p>`;
 }
 function abrirReservar(id) {
   const s = (S.cache.sessoes || []).find(x => x.id === id); if (!s) return;
